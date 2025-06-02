@@ -39,7 +39,7 @@ async function init(state, provider, endFlow) {
   await getTranscription(state);
 
   // *Get the response from the AI
-  const response =await getResponse(state);
+  const response =await getResponse(state, provider);
   if (response === process.env.BOT_FAILURE_MESSAGE) {
     await sendTextFormated(state.get("phone"), response, provider);
     await chatwootService.sendNotes(state.get("phone"), response, "outgoing", true);

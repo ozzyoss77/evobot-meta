@@ -19,7 +19,7 @@ const multimediaNotifications = process.env.BOT_MULTIMEDIA_NOTIFICATIONS || "fal
  */
 async function init(state, endFlow, provider) {
   // *Get the response from the AI
-  const response = await getResponseImage(state, state.get("buffer"));
+  const response = await getResponseImage(state, state.get("buffer"), provider);
   if (
     response ===
     process.env.BOT_FAILURE_MESSAGE
