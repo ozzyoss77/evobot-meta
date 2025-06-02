@@ -15,7 +15,6 @@ const logger = new Logger();
 class MediaService {
   private logger = new Logger();
   private mediaHandlers: Record<string, MediaTag>;
-  private provider: any;
 
   constructor(provider: any) {
     this.mediaHandlers = {
@@ -56,7 +55,7 @@ class MediaService {
 
           if (mediaUrl !== false) {
             matches.forEach(async () => {
-              await this.provider.sendMediaUrl(state.get("phone"), mediaType, mediaUrl);
+              await provider.sendMediaUrl(state.get("phone"), mediaType, mediaUrl);
             });
           }
         }
@@ -76,11 +75,8 @@ class RegexService {
   private logger: Logger;
   private lobbyService: LobbyService;
   private followUpService: any;
-  private followUpActivate: string;
-  private provider: any;
 
   constructor(provider: any) {
-    this.provider = provider;
     this.config = {
       labelsName: process.env.BOT_LABELS_NAME.split(","),
       priorityName: process.env.BOT_PRIORITY_NAME.split(","),
@@ -189,16 +185,16 @@ class RegexService {
     }
   }
 
-  async removeImageTags(text: string, state: Map<string, any>): Promise<string> {
-    return this.mediaService.processMediaTags(text, this.config.imagesTags, 'images', state, this.provider);
+  async removeImageTags(text: string, state: Map<string, any>, provider: any): Promise<string> {
+    return this.mediaService.processMediaTags(text, this.config.imagesTags, 'images', state, provider);
   }
 
-  async removeVideoTags(text: string, state: Map<string, any>): Promise<string> {
-    return this.mediaService.processMediaTags(text, this.config.videosTags, 'videos', state, this.provider);
+  async removeVideoTags(text: string, state: Map<string, any>, provider: any): Promise<string> {
+    return this.mediaService.processMediaTags(text, this.config.videosTags, 'videos', state, provider);
   }
 
-  async removeDocumentTags(text: string, state: Map<string, any>): Promise<string> {
-    return this.mediaService.processMediaTags(text, this.config.documentsTags, 'documents', state, this.provider);
+  async removeDocumentTags(text: string, state: Map<string, any>, provider: any): Promise<string> {
+    return this.mediaService.processMediaTags(text, this.config.documentsTags, 'documents', state, provider);
   }
 
   async removeUrlsAndNotify(
@@ -330,29 +326,29 @@ class RegexService {
       }
 
       // *Remove chatwoot tags
-      text = await this.removeLabels(text, state, this.provider);
+      text = await this.removeLabels(text, state, provider);
       text = await this.removeAgents(text, state);
-      text = await this.removePriority(text, state, this.provider);
+      text = await this.removePriority(text, state, provider);
 
       // *Remove media tags
-      text = await this.removeImageTags(text, state);
-      text = await this.removeVideoTags(text, state);
-      text = await this.removeDocumentTags(text, state);
+      text = await this.removeImageTags(text, state, provider);
+      text = await this.removeVideoTags(text, state, provider);
+      text = await this.removeDocumentTags(text, state, provider);
 
       // *Remove urls and notify
-      text = await this.removeUrlsAndNotify(text, state, this.provider);
+      text = await this.removeUrlsAndNotify(text, state, provider);
 
       // *Lobby Integration
       if (this.config.lobbyActivate === "true") {
         const response = await this.lobbyService.processTag(text, state);
         text = response.text;
-        text = await this.removeLabels(text, state, this.provider);
+        text = await this.removeLabels(text, state, provider);
         text = await this.removeAgents(text, state);
-        text = await this.removePriority(text, state, this.provider);
-        text = await this.removeImageTags(text, state);
-        text = await this.removeVideoTags(text, state);
-        text = await this.removeDocumentTags(text, state);
-        text = await this.removeUrlsAndNotify(text, state, this.provider);
+        text = await this.removePriority(text, state, provider);
+        text = await this.removeImageTags(text, state, provider);
+        text = await this.removeVideoTags(text, state, provider);
+        text = await this.removeDocumentTags(text, state, provider);
+        text = await this.removeUrlsAndNotify(text, state, provider);
       }
 
       // *Shopify Integration
@@ -360,26 +356,26 @@ class RegexService {
         const shopifyService = new ShopifyService();
         const response = await shopifyService.processTag(text, state);
         text = response.text;
-        text = await this.removeLabels(text, state, this.provider);
+        text = await this.removeLabels(text, state, provider);
         text = await this.removeAgents(text, state);
-        text = await this.removePriority(text, state, this.provider);
-        text = await this.removeImageTags(text, state);
-        text = await this.removeVideoTags(text, state);
-        text = await this.removeDocumentTags(text, state);
-        text = await this.removeUrlsAndNotify(text, state, this.provider);
+        text = await this.removePriority(text, state, provider);
+        text = await this.removeImageTags(text, state, provider);
+        text = await this.removeVideoTags(text, state, provider);
+        text = await this.removeDocumentTags(text, state, provider);
+        text = await this.removeUrlsAndNotify(text, state, provider);
       }
 
        // *Cal Appointment Integration
        if (this.config.calAppointmentActivated === "true") {
         const calService = new CalService();
         const textResponse = await calService.processCommand(text, state);
-        text = await this.removeLabels(text, state, this.provider);
+        text = await this.removeLabels(text, state, provider);
         text = await this.removeAgents(text, state);
-        text = await this.removePriority(text, state, this.provider);
-        text = await this.removeImageTags(text, state);
-        text = await this.removeVideoTags(text, state);
-        text = await this.removeDocumentTags(text, state);
-        text = await this.removeUrlsAndNotify(text, state, this.provider);
+        text = await this.removePriority(text, state, provider);
+        text = await this.removeImageTags(text, state, provider);
+        text = await this.removeVideoTags(text, state, provider);
+        text = await this.removeDocumentTags(text, state, provider);
+        text = await this.removeUrlsAndNotify(text, state, provider);
         text = textResponse;
       }
 
