@@ -34,7 +34,15 @@ const main = async () => {
   );
 
   const adapterFlow = createFlow([
-    initFlow
+    initFlow,
+    textFlow,
+    voiceFlow,
+    imageFlow,
+    locationFlow,
+    documentFlow,
+    botSwitcherFlow,
+    blockFlow,
+    idleFlow
   ])
   const adapterProvider = createProvider(Provider, {
     jwtToken: process.env.BOT_JWT_TOKEN,

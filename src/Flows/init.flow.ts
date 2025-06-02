@@ -33,7 +33,6 @@ const enqueueMessages = createMessageQueue(queueConfig);
 
 const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
   async (ctx, { gotoFlow, state, globalState, endFlow, provider }) => {
-    console.log(ctx);
     if (ctx.to !== botPhoneNumber) {
       return endFlow();
     }
@@ -56,15 +55,15 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
     const isBlocked = await checkBlock(state, globalState);
     if (isBlocked) return endFlow();
 
-    if (announcementMetricsActivate === 'true' && announcementMetrics.messages.includes(ctx.body)) {
-      const messageIndex = announcementMetrics.messages.indexOf(ctx.body);
-      const correspondingCode = announcementMetricsCodes.codes[messageIndex];
-      logger.log(`Mensaje coincidente detectado: ${ctx.body}`);
-      logger.log(`Código correspondiente: ${correspondingCode}`);
-      const labels = await chatwootService.getLabels(state.get("conversationID")) || [];
-      labels.push(correspondingCode);
-      await chatwootService.setLabels(state.get("phone"), labels);
-    }
+    // if (announcementMetricsActivate === 'true' && announcementMetrics.messages.includes(ctx.body)) {
+    //   const messageIndex = announcementMetrics.messages.indexOf(ctx.body);
+    //   const correspondingCode = announcementMetricsCodes.codes[messageIndex];
+    //   logger.log(`Mensaje coincidente detectado: ${ctx.body}`);
+    //   logger.log(`Código correspondiente: ${correspondingCode}`);
+    //   const labels = await chatwootService.getLabels(state.get("conversationID")) || [];
+    //   labels.push(correspondingCode);
+    //   await chatwootService.setLabels(state.get("phone"), labels);
+    // }
 
     // *If phone is not whitelisted, end the flow
     if (whitelist === "true") {
@@ -110,14 +109,18 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
               logger.error(`Error al obtener el buffer de la URL: ${error}`);
             }
           }
-
           await state.update({
             message: `Fecha y hora actual: ${time}\nMensaje citado: ${messageContent}\n${messages}`,
             ...(imageBuffer && { imageQuoted: imageBuffer })
           });
           
           return gotoFlow(textFlow);
-        } 
+        } else {
+          await state.update({
+            message: `Fecha y hora actual: ${time}\nMensaje: ${ctx.body}`,
+          });
+          return gotoFlow(textFlow);
+        }
       });
     } catch (error) {
       logger.error(`Error en initFlow: ${error}`);
