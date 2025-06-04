@@ -15,6 +15,11 @@ const logger = new Logger();
 class MediaService {
   private logger = new Logger();
   private mediaHandlers: Record<string, MediaTag>;
+  private mediaTypeMap: Record<string, string> = {
+    'images': 'image',
+    'videos': 'video',
+    'documents': 'document'
+  };
 
   constructor(provider: any) {
     this.mediaHandlers = {
@@ -42,7 +47,6 @@ class MediaService {
   ): Promise<string> {
     try {
       const handler = this.mediaHandlers[mediaType];
-
       for (const tag of tags) {
         const tagRegex = new RegExp(`%%${tag}%%`, "g");
         const matches = text.match(tagRegex);
@@ -55,7 +59,8 @@ class MediaService {
 
           if (mediaUrl !== false) {
             matches.forEach(async () => {
-              await provider.sendMediaUrl(state.get("phone"), mediaType, mediaUrl);
+              const mappedMediaType = this.mediaTypeMap[mediaType];
+              await provider.sendMediaUrl(state.get("phone"), mappedMediaType, mediaUrl, '');
             });
           }
         }

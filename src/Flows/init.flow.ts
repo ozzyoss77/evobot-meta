@@ -36,6 +36,7 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
     if (ctx.to !== botPhoneNumber) {
       return endFlow();
     }
+
     // *Update the state with user details
     await state.update({
       name: ctx.name,

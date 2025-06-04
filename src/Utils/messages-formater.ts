@@ -19,7 +19,7 @@ export async function sendTextFormated(phone: string, message: string, provider:
 }
 
 export async function sendMediaFormated(phone: string, type: string, url: string, provider: any, caption = ''){
-    const messageSave = await provider.sendMediaUrl(phone, type, url);
+    const messageSave = await provider.sendMediaUrl(phone, type, url, caption);
     await appwriteService.createDocument(
         whatsapp_messages_db,
         whatsapp_messages_collection,
