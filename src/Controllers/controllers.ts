@@ -1,4 +1,3 @@
-import axios from "axios";
 import chatwootService from "src/Connections/chatwoot.class";
 import { formatDateTime } from "src/Utils/formatter";
 import Logger from "src/Utils/logger";
@@ -40,7 +39,7 @@ export async function calendarEvent(bot, req, res) {
       );
       const contactID = await chatwootService.getContactID(phone);
       if (!contactID) {
-        await chatwootService.createContact(phone, bodyText);
+        await chatwootService.createContact(phone, calName);
       }
       const conversationID = await chatwootService.getConversationID(phone);
       if (!conversationID) {
@@ -71,7 +70,7 @@ export async function calendarEvent(bot, req, res) {
       );
       const contactID = await chatwootService.getContactID(phone);
       if (!contactID) {
-        await chatwootService.createContact(phone, bodyText);
+        await chatwootService.createContact(phone, calName);
       }
       const conversationID = await chatwootService.getConversationID(phone);
       if (!conversationID) {
@@ -118,7 +117,7 @@ export async function massiveEvent(bot, req, res) {
         const blob = new Blob([buffer], { type: 'image/jpeg' });
         const contactID = await chatwootService.getContactID(number);
         if (!contactID) {
-          await chatwootService.createContact(number, message);
+          await chatwootService.createContact(number, number);
         }
         const conversationID = await chatwootService.getConversationID(number);
         if (!conversationID) {
@@ -143,7 +142,7 @@ export async function massiveEvent(bot, req, res) {
         const blob = new Blob([buffer], { type: 'video/mp4' });
         const contactID = await chatwootService.getContactID(number);
         if (!contactID) {
-          await chatwootService.createContact(number, message);
+          await chatwootService.createContact(number, number);
         }
         const conversationID = await chatwootService.getConversationID(number);
         if (!conversationID) {
@@ -168,7 +167,7 @@ export async function massiveEvent(bot, req, res) {
         const blob = new Blob([buffer], { type: 'application/pdf' });
         const contactID = await chatwootService.getContactID(number);
         if (!contactID) {
-          await chatwootService.createContact(number, message);
+          await chatwootService.createContact(number, number);
         }
         const conversationID = await chatwootService.getConversationID(number);
         if (!conversationID) {
@@ -190,7 +189,7 @@ export async function massiveEvent(bot, req, res) {
         );
         const contactID = await chatwootService.getContactID(number);
         if (!contactID) {
-          await chatwootService.createContact(number, message);
+          await chatwootService.createContact(number, number);
         }
         const conversationID = await chatwootService.getConversationID(number);
         if (!conversationID) {
@@ -248,7 +247,7 @@ export async function ghlEvent(bot, req, res) {
       const blob = new Blob([buffer], { type: 'image/jpeg' });
       const contactID = await chatwootService.getContactID(removePlusPhone);
       if (!contactID) {
-        await chatwootService.createContact(removePlusPhone, `Hola ${first_name}! ${process.env.GHL_CREATED_EVENT_MESSAGE}`);
+        await chatwootService.createContact(removePlusPhone, first_name);
       }
       const conversationID = await chatwootService.getConversationID(removePlusPhone);
       if (!conversationID) {
@@ -271,7 +270,7 @@ export async function ghlEvent(bot, req, res) {
       const blob = new Blob([buffer], { type: 'video/mp4' });
       const contactID = await chatwootService.getContactID(removePlusPhone);
       if (!contactID) {
-        await chatwootService.createContact(removePlusPhone, `Hola ${first_name}! ${process.env.GHL_CREATED_EVENT_MESSAGE}`);
+        await chatwootService.createContact(removePlusPhone, first_name);
       }
       const conversationID = await chatwootService.getConversationID(removePlusPhone);
       if (!conversationID) {
@@ -291,7 +290,7 @@ export async function ghlEvent(bot, req, res) {
       );
       const contactID = await chatwootService.getContactID(removePlusPhone);
       if (!contactID) {
-        await chatwootService.createContact(removePlusPhone, `Hola ${first_name}! ${process.env.GHL_CREATED_EVENT_MESSAGE}`);
+        await chatwootService.createContact(removePlusPhone, first_name);
       }
       const conversationID = await chatwootService.getConversationID(removePlusPhone);
       if (!conversationID) {
@@ -325,7 +324,7 @@ export async function hubspotEvent(bot, req, res) {
     );
     const contactID = await chatwootService.getContactID(removePlusPhone);
     if (!contactID) {
-      await chatwootService.createContact(removePlusPhone, `Hola ${firstname}! ${process.env.HUBSPOT_CREATED_EVENT_MESSAGE}`);
+      await chatwootService.createContact(removePlusPhone, firstname);
     }
     const conversationID = await chatwootService.getConversationID(removePlusPhone);
     if (!conversationID) {
@@ -430,7 +429,7 @@ export async function shopifyConfirmationEvent(bot, req, res) {
       );
       const contactID = await chatwootService.getContactID(phone);
       if (!contactID) {
-        await chatwootService.createContact(phone, textResponse);
+        await chatwootService.createContact(phone, name);
       }
       const conversationID = await chatwootService.getConversationID(phone);
       if (!conversationID) {
@@ -460,7 +459,7 @@ export async function shopifyConfirmationEvent(bot, req, res) {
       );
       const contactID = await chatwootService.getContactID(phone);
       if (!contactID) {
-        await chatwootService.createContact(phone, textResponse);
+        await chatwootService.createContact(phone, name);
       }
       const conversationID = await chatwootService.getConversationID(phone);
       if (!conversationID) {

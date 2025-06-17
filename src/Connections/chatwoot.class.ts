@@ -60,7 +60,7 @@ class ChatwootService {
           source_id: phoneNumber,
         }
       );
-      return data.payload.id;
+      return data
     } catch (error) {
       logger.error(`Error en createContact:", ${error}`);
       return false;
@@ -84,7 +84,7 @@ class ChatwootService {
           }
         }
       );
-      return data.payload.id;
+      return data
     } catch (error) {
       logger.error(`Error en createConversation:", ${error}`);
       return false;
