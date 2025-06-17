@@ -20,11 +20,21 @@ class WhatsAppFollowUp {
   private static readonly REDIS_PREFIX = "followup:";
   private interval_first: number;
   private interval_second: number;
+  private template_first: string;
+  private template_second: string;
+  private template_language: string;
+  private template_first_body: string;
+  private template_second_body: string;
 
   constructor() {
     this.timezone = process.env.BOT_TIMEZONE || "UTC";
     this.interval_first = parseInt(process.env.BOT_FOLLOWUP_INTERVAL_FIRST || "0");
+    this.template_first = process.env.BOT_FOLLOWUP_TEMPLATE_FIRST || "";
     this.interval_second = parseInt(process.env.BOT_FOLLOWUP_INTERVAL_SECOND || "0");
+    this.template_second = process.env.BOT_FOLLOWUP_TEMPLATE_SECOND || "";
+    this.template_language = process.env.BOT_FOLLOWUP_TEMPLATE_LANGUAGE || "es_Mx";
+    this.template_first_body = process.env.BOT_FOLLOWUP_TEMPLATE_FIRST_BODY || "";
+    this.template_second_body = process.env.BOT_FOLLOWUP_TEMPLATE_SECOND_BODY || "";
   }
 
   private getRedisKey(phoneNumber: string): string {
@@ -136,11 +146,21 @@ class WhatsAppFollowUp {
 
     if (intent === 1) {
       logger.log(`Trying first intent for ${phoneNumber}`);
-      await this.sendAIResponse(phoneNumber, intentMap[intent], provider);
+      await provider.sendTemplate(
+        phoneNumber,
+        this.template_first,
+        this.template_language
+      )
+      const aiResponsePromise = this.sendAIResponse(phoneNumber, `${intentMap[intent]} - ${this.template_first_body}`, provider);
     } else if (intent === 2) {
       // El segundo intento es el último, eliminamos el registro
       logger.log(`Trying final (second) intent for ${phoneNumber}`);
-      const aiResponsePromise = this.sendAIResponse(phoneNumber, intentMap[intent], provider);
+      await provider.sendTemplate(
+        phoneNumber,
+        this.template_second,
+        this.template_language
+      )
+      const aiResponsePromise = this.sendAIResponse(phoneNumber, `${intentMap[intent]} - ${this.template_second_body}`, provider);
       const removePhonePromise = this.removePhoneNumber(phoneNumber);
       
       try {
@@ -186,7 +206,7 @@ class WhatsAppFollowUp {
         totalTokenCount
       );
       
-      await provider.sendText(phoneNumber, textResponse);
+      // await provider.sendText(phoneNumber, textResponse);
       logger.log(`Successfully sent AI response to ${phoneNumber}`);
     } catch (error) {
       logger.error(`Failed to send AI response to ${phoneNumber}: ${error}`);

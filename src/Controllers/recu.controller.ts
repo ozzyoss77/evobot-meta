@@ -1,6 +1,7 @@
 import chatwootService from "src/Connections/chatwoot.class";
 import Logger from "src/Utils/logger";
 import appwriteService from "src/Connections/appwrite";
+import { newAIResponse } from "src/AIApi/api-llm";
 import "dotenv/config";
 
 const logger = new Logger();
@@ -11,7 +12,7 @@ function replaceVariables(text: string, variables: { [key: string]: string }): s
 
 export async function recuMassive(bot, req, res) {
   try {
-    const { phone, name, businessName, amount, mediaUrl, mediaType, mediaTranscript, template, templateLanguage, templateBody } = req.body;
+    const { phone, name, id_deudor, businessName, amount, mediaUrl, mediaType, mediaTranscript, template, templateLanguage, templateBody } = req.body;
     const templateBodyParsed = replaceVariables(templateBody, {
       name,
       businessName,
@@ -68,8 +69,10 @@ export async function recuMassive(bot, req, res) {
         businessName,
         amount,
         mediaUrl,
-        mediaTranscript
+        mediaTranscript,
+        id_deudor
       });
+    await newAIResponse(phone, `||ID Deudor: ${id_deudor} Contexto: ${mediaTranscript} Plantilla: ${templateBodyParsed}||`);
     logger.log(`template sended to ${phone}`);
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({ status: "sended" }));
