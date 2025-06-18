@@ -61,6 +61,35 @@ class MediaService {
             matches.forEach(async () => {
               const mappedMediaType = this.mediaTypeMap[mediaType];
               await provider.sendMediaUrl(state.get("phone"), mappedMediaType, mediaUrl, '');
+              const conversationID = await chatwootService.getConversationID(state.get("phone"));
+              const response = await fetch(mediaUrl);
+              const buffer = Buffer.from(await response.arrayBuffer());
+              let blob;
+              switch (mappedMediaType) {
+                case "image":
+                  blob = new Blob([buffer], { type: 'image/jpeg' });
+                  break;
+                case "video":
+                  blob = new Blob([buffer], { type: 'video/mp4' });
+                  break;
+                case "document":
+                  blob = new Blob([buffer], { type: 'application/pdf' });
+                  break;
+                case "audio":
+                  blob = new Blob([buffer], { type: 'audio/mp3' });
+                  break;
+                default:
+                  this.logger.error(`Error creating blob for ${mappedMediaType}`);
+                  return;
+              }
+              await chatwootService.sendMedia(
+                conversationID,
+                '',
+                'outgoing',
+                blob,
+                mappedMediaType as "image" | "video" | "document" | "audio",
+                true
+              )
             });
           }
         }
@@ -129,12 +158,15 @@ class RegexService {
           labels.push(label);
           await chatwootService.setLabels(state.get("phone"), labels);
           if (this.config.notifications === 'true') {
-            await provider.sendText(
-              process.env.BOT_ADMIN_PHONE_NUMBER,
-              `La conversación con el nombre ${state.get(
-                "name"
-              )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la etiqueta ${label}`
-            );
+            // await provider.sendText(
+            //   process.env.BOT_ADMIN_PHONE_NUMBER,
+            //   `La conversación con el nombre ${state.get(
+            //     "name"
+            //   )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la etiqueta ${label}`
+            // );
+            logger.log(`La conversación con el nombre ${state.get(
+              "name"
+            )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la etiqueta ${label}`);
           }
           return text.replace(labelRegex, "");
         }
@@ -173,12 +205,15 @@ class RegexService {
         if (priorityRegex.test(text)) {
           await chatwootService.togglePriority(state.get("phone"), priority);
           if (this.config.notifications === 'true') {
-            await provider.sendText(
-              process.env.BOT_ADMIN_PHONE_NUMBER,
-              `La conversación con el nombre ${state.get(
-                "name"
-              )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la prioridad ${priority}`
-            );
+            // await provider.sendText(
+            //   process.env.BOT_ADMIN_PHONE_NUMBER,
+            //   `La conversación con el nombre ${state.get(
+            //     "name"
+            //   )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la prioridad ${priority}`
+            // );
+            logger.log(`La conversación con el nombre ${state.get(
+              "name"
+            )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la prioridad ${priority}`);
           }
           return text.replace(priorityRegex, "");
         }
@@ -220,9 +255,22 @@ class RegexService {
           
           if (isImage) {
             await provider.sendMediaUrl(state.get("phone"), 'image', url);
+            const response = await fetch(url);
+            const buffer = Buffer.from(await response.arrayBuffer());
+            const blob = new Blob([buffer], { type: 'image/jpeg' });
+            const conversationID = await chatwootService.getConversationID(state.get("phone"));
+            await chatwootService.sendMedia(
+              conversationID,
+              '',
+              'outgoing',
+              blob,
+              'image',
+              true
+            )
             logger.log(`Imagen enviada a ${state.get("phone")}`);
           } else {
             await provider.sendText(state.get("phone"), url);
+            await chatwootService.sendNotes(state.get("phone"), url, "outgoing", true);
             logger.log(`URL enviada a ${state.get("phone")}`);
           }
         }
