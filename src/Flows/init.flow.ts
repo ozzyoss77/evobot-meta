@@ -33,7 +33,7 @@ const enqueueMessages = createMessageQueue(queueConfig);
 
 const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
   async (ctx, { gotoFlow, state, globalState, endFlow, provider }) => {
-    if (ctx.from !== botPhoneNumber) {
+    if (ctx.to !== botPhoneNumber) {
       return endFlow();
     }
 
