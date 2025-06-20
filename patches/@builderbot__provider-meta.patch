@@ -119,17 +119,21 @@ index 7aad527fc317f6ce42d6520b54bf7b63f0541681..3b49124ac8a0db9eba6d7b5f2123af0c
                  body.context = { message_id: context };
              return this.sendMessageMeta(body);
          };
-+		this.sendMediaUrl = async (to, type, url, caption = '') => {
++		this.sendMediaUrl = async (to, type, url, caption = '', filename = '') => {
 +			to = parseMetaNumber(to);
++			const mediaContent = {
++				link: url,
++				caption: caption,
++			}
++			if (filename) {
++				mediaContent.filename = filename;
++			}
 +			const body = {
 +				messaging_product: 'whatsapp',
 +				recipient_type: 'individual',
 +				to,
 +				type: type,
-+				[type]: {
-+					link: url,
-+					caption: caption,
-+				},
++				[type]: mediaContent,
 +			}
 +			return this.sendMessageMeta(body);
 +		};

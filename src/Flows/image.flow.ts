@@ -9,6 +9,7 @@ import "dotenv/config";
 
 const mediaActivate = process.env.BOT_MEDIA_ACTIVATE || "false";
 const multimediaNotifications = process.env.BOT_MULTIMEDIA_NOTIFICATIONS || "false";
+const botPhoneNumber = process.env.BOT_PHONENUMBER || "";
 
 /**
  * *Function to initialize the flow
@@ -42,6 +43,9 @@ async function init(state, endFlow, provider) {
  */
 const imageFlow = addKeyword<Provider, Database>(EVENTS.MEDIA).addAction(
   async (ctx, { state, globalState, endFlow, provider }) => {
+    if (ctx.to !== botPhoneNumber) {
+      return endFlow();
+    }
     if (mediaActivate === "true" && ctx.type === "image") {
       const buffer = await provider.saveBuffer(ctx);
       const time = inyectDateTime();

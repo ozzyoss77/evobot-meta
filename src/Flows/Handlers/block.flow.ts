@@ -9,9 +9,13 @@ import "dotenv/config";
 
 const logger = new Logger();
 const blockMessage = process.env.BOT_BLOCK_MESSAGE;
+const botPhoneNumber = process.env.BOT_PHONENUMBER || "";
 
 const blockFlow = addKeyword<Provider, Database>(blockMessage)
-  .addAction(async (ctx, { state, gotoFlow, provider }) => {
+  .addAction(async (ctx, { state, gotoFlow, provider, endFlow }) => {
+    if (ctx.to !== botPhoneNumber) {
+      return endFlow();
+    }
     await state.update({
       phone: ctx.from,
     });

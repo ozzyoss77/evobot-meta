@@ -6,9 +6,13 @@ import { sendTextFormated } from "src/Utils/messages-formater";
 import "dotenv/config";
 
 const multimediaNotifications = process.env.BOT_MULTIMEDIA_NOTIFICATIONS || "false";
+const botPhoneNumber = process.env.BOT_PHONENUMBER || "";
 
 const documentFlow = addKeyword<Provider, Database>(EVENTS.DOCUMENT).addAction(
   async (ctx, { state, endFlow, provider }) => {
+    if (ctx.to !== botPhoneNumber) {
+      return endFlow();
+    }
     if (multimediaNotifications === 'true' && ctx.type === "document") {
       await sendTextFormated(
         process.env.BOT_ADMIN_PHONE_NUMBER,

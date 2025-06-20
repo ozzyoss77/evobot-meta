@@ -226,8 +226,9 @@ class AppwriteService {
         }
       );
       const fileId = response.data.files[0].$id;
+      const name = response.data.files[0].name;
       const url = `${this.baseUrl}/storage/buckets/${bucketId}/files/${fileId}/view?project=${this.project}&project=${this.project}&mode=admin`;
-      return url;
+      return { url, name };
     } catch (error) {
       this.logger.error(`Error searching files: ${error}`);
       return false;

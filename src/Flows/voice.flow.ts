@@ -13,6 +13,7 @@ import "dotenv/config";
 
 const logger = new Logger();
 const selecter = process.env.BOT_VOICE_RESPONSE_ACTIVATE;
+const botPhoneNumber = process.env.BOT_PHONENUMBER || "";
 const bucketId = "aiclon-audios"
 
 /**
@@ -85,6 +86,9 @@ async function init(state, provider, endFlow) {
  */
 const voiceFlow = addKeyword<Provider, Database>(EVENTS.VOICE_NOTE).addAction(
   async (ctx, { state, globalState, endFlow, provider }) => {
+    if (ctx.to !== botPhoneNumber) {
+      return endFlow();
+    }
     const buffer = await provider.saveBuffer(ctx);
     await state.update({
       name: ctx.name,

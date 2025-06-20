@@ -8,9 +8,13 @@ import "dotenv/config";
 
 const logger = new Logger();
 const botSwitcher = process.env.BOT_SWITCHER;
+const botPhoneNumber = process.env.BOT_PHONENUMBER || "";
 
 const botSwitcherFlow = addKeyword<Provider, Database>(botSwitcher).addAction(
   async (ctx, { globalState, endFlow, provider }) => {
+    if (ctx.to !== botPhoneNumber) {
+      return endFlow();
+    }
     let blockState = globalState.get("block") || "";
 
     let message;

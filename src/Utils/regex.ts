@@ -52,17 +52,17 @@ class MediaService {
         const matches = text.match(tagRegex);
 
         if (matches?.length) {
-          const mediaUrl = await appwriteService.searchFiles(
+          const mediaInfo = await appwriteService.searchFiles(
             handler.bucketName,
             tag
           );
 
-          if (mediaUrl !== false) {
+          if (mediaInfo !== false) {
             matches.forEach(async () => {
               const mappedMediaType = this.mediaTypeMap[mediaType];
-              await provider.sendMediaUrl(state.get("phone"), mappedMediaType, mediaUrl, '');
+              await provider.sendMediaUrl(state.get("phone"), mappedMediaType, mediaInfo.url, '', mediaInfo.name);
               const conversationID = await chatwootService.getConversationID(state.get("phone"));
-              const response = await fetch(mediaUrl);
+              const response = await fetch(mediaInfo.url);
               const buffer = Buffer.from(await response.arrayBuffer());
               let blob;
               switch (mappedMediaType) {
@@ -187,6 +187,7 @@ class RegexService {
       for (const match of numberMatches) {
         const agentId = match[1]; // *Obtener el número capturado
         await chatwootService.setAgent(state.get("phone"), agentId);
+        await chatwootService.setAttributes(state.get("phone"), "bot", "Off");
         text = text.replace(match[0], "");
       }
 

@@ -18,8 +18,13 @@ export async function sendTextFormated(phone: string, message: string, provider:
     return messageSave.messages[0].id;
 }
 
-export async function sendMediaFormated(phone: string, type: string, url: string, provider: any, caption = ''){
-    const messageSave = await provider.sendMediaUrl(phone, type, url, caption);
+export async function sendMediaFormated(phone: string, type: string, url: string, provider: any, caption = '', filename = ''){
+    let messageSave;
+    if (type === 'document') {
+        messageSave = await provider.sendMediaUrl(phone, type, url, caption, filename);
+    } else {
+        messageSave = await provider.sendMediaUrl(phone, type, url, caption);
+    }
     await appwriteService.createDocument(
         whatsapp_messages_db,
         whatsapp_messages_collection,
