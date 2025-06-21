@@ -99,10 +99,28 @@ export async function calendarEvent(bot, req, res) {
 
 export async function massiveEvent(bot, req, res) {
   try {
-    const { number, url, message, event } = req.body;
+    const { number, url, message, event, template, languageCode } = req.body;
+    const components = [
+      {
+        type: "header",
+        parameters: [
+          {
+            type: event,
+            [event]: {
+              link: url,
+            }
+          }
+        ]
+      }
+    ]
     switch (event) {
       case "image": {
-        const messageSave = await bot.provider.sendMediaUrl(number, "image", url, message);
+        const messageSave = await bot.provider.sendTemplate(
+          number,
+          template,
+          languageCode,
+          components
+        );
         await appwriteService.createDocument(
           whatsapp_messages_db,
           whatsapp_messages_collection,
@@ -127,7 +145,12 @@ export async function massiveEvent(bot, req, res) {
         break;
       }
       case "video": {
-        const messageSave = await bot.provider.sendMediaUrl(number, "video", url, message);
+        const messageSave = await bot.provider.sendTemplate(
+          number,
+          template,
+          languageCode,
+          components
+        );
         await appwriteService.createDocument(
           whatsapp_messages_db,
           whatsapp_messages_collection,
@@ -152,7 +175,12 @@ export async function massiveEvent(bot, req, res) {
         break;
       }
       case "document": {
-        const messageSave = await bot.provider.sendMediaUrl(number, "document", url, message);
+        const messageSave = await bot.provider.sendTemplate(
+          number,
+          template,
+          languageCode,
+          components
+        );
         await appwriteService.createDocument(
           whatsapp_messages_db,
           whatsapp_messages_collection,
@@ -176,8 +204,12 @@ export async function massiveEvent(bot, req, res) {
         await chatwootService.sendMedia(conversationID, message, "outgoing", blob, "document", true);
         break;
       }
-      default: {
-        const messageSave = await bot.provider.sendText(number, message);
+      case "text": {
+        const messageSave = await bot.provider.sendTemplate(
+          number,
+          template,
+          languageCode,
+        );
         await appwriteService.createDocument(
           whatsapp_messages_db,
           whatsapp_messages_collection,
@@ -204,7 +236,7 @@ export async function massiveEvent(bot, req, res) {
     return res.end(JSON.stringify({ status: "sended" }));
   } catch (error) {
     logger.error(
-      `Error en massiveEvent: ${error.response.data.response.message}`
+      `Error en massiveEvent: ${error}`
     );
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Error en massiveEvent" }));
