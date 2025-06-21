@@ -60,7 +60,11 @@ class MediaService {
           if (mediaInfo !== false) {
             matches.forEach(async () => {
               const mappedMediaType = this.mediaTypeMap[mediaType];
-              await provider.sendMediaUrl(state.get("phone"), mappedMediaType, mediaInfo.url, '', mediaInfo.name);
+              if (mappedMediaType === 'document') {
+                await provider.sendMediaUrl(state.get("phone"), mappedMediaType, mediaInfo.url, '', mediaInfo.name);
+              } else {
+                await provider.sendMediaUrl(state.get("phone"), mappedMediaType, mediaInfo.url, '');
+              }
               const conversationID = await chatwootService.getConversationID(state.get("phone"));
               const response = await fetch(mediaInfo.url);
               const buffer = Buffer.from(await response.arrayBuffer());
