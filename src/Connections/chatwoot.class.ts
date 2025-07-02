@@ -47,6 +47,32 @@ class ChatwootService {
     }
   }
 
+  private async retryOperation<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    delayMs: number = 1000
+  ): Promise<T | false> {
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        logger.warn(`Intent ${attempt}/${maxRetries} failed: ${error}`);
+        
+        if (attempt < maxRetries) {
+          // Espera exponencial: 1s, 2s, 4s
+          const waitTime = delayMs * Math.pow(2, attempt - 1);
+          logger.log(`Waiting ${waitTime}ms before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+    
+    return false;
+  }
+
   public async createContact(phoneNumber: string, name: string) {
     try {
       const data = await this.fetchFromChatwoot(
@@ -128,12 +154,14 @@ class ChatwootService {
 
   public async getAttributes(phoneNumber: string) {
     try {
-      const data = await this.fetchFromChatwoot(
-        `${this.host}/${this.apiVersion}/accounts/${this.accountId}/contacts/search?q=${phoneNumber}`
-      );
-      return data.payload[0].custom_attributes;
+      return await this.retryOperation(async () => {
+        const data = await this.fetchFromChatwoot(
+          `${this.host}/${this.apiVersion}/accounts/${this.accountId}/contacts/search?q=${phoneNumber}`
+        );
+        return data.payload[0].custom_attributes;
+      });
     } catch (error) {
-      logger.error(`Error en getAttributes:", ${error}`);
+      logger.error(`Error en getAttributes después de todos los reintentos: ${error}`);
       return false;
     }
   }
