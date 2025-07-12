@@ -71,7 +71,7 @@ export async function newAIResponse(slug: string, message: string, currentAttemp
       return newAIResponse(slug, message, currentAttempt + 1);
     }
     
-    logger.error(`Error getting response from AI API after ${maxRetries} attempts: ${JSON.stringify(error.response?.data)}`);
+    logger.error(`Error getting response from AI API after ${maxRetries} attempts: ${JSON.stringify(error)}`);
     return { textResponse: false, totalTokenCount: false };
   }
 }
@@ -132,7 +132,7 @@ export async function newImageResponse(slug: string, message: string, imageBuffe
     // logger.log(`Token count: ${totalTokenCount}`);
     return { textResponse, totalTokenCount };
   } catch (error) {
-    logger.error(`Error getting response from AI API: ${error.response?.data}`);
+    logger.error(`Error getting response from AI API: ${error}`);
     throw error;
   }
 }
@@ -158,7 +158,7 @@ export async function updateThread(name: string, slug: string) {
     );
     return response.data;
   } catch (error) {
-    // logger.error(`Error updating thread: ${error.response?.data}`);
+    // logger.error(`Error updating thread: ${error}`);
     return "error";
   }
 }
@@ -178,7 +178,7 @@ export async function deleteThread(slug: string) {
     logger.log(`Thread ${slug} deleted successfully`);
     return response.data;
   } catch (error) {
-    logger.error(`Error deleting thread: ${error.response?.data}`);
+    logger.error(`Error deleting thread: ${error}`);
     return "error";
   }
 }
@@ -198,7 +198,7 @@ export async function getThreads(slug: string) {
     );
     return response.data;
   } catch (error) {
-    logger.error(`Error getting threads: ${error.response?.data}`);
+    logger.error(`Error getting threads: ${error}`);
     return "error";
   }
 }
@@ -219,7 +219,7 @@ export async function checkThread(slug: string) {
     return true;
   } catch (error) {
     const formattedPhoneNumber = removeWhatsAppSuffix(slug);
-    logger.log(`Thread ${formattedPhoneNumber} does not exist or there was an error checking it: ${error.response?.data}`);
+    logger.log(`Thread ${formattedPhoneNumber} does not exist or there was an error checking it: ${error}`);
     return false;
   }
 }
