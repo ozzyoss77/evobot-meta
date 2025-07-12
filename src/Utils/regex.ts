@@ -1,17 +1,16 @@
 import Logger from "src/Utils/logger";
 import chatwootService from "src/Connections/chatwoot.class";
 import appwriteService from "src/Connections/appwrite";
+import recuApiClient from "src/Connections/recu.api";
 import { removeWhatsAppSuffix } from "./formatter";
 import { MediaTag, Config } from '../interfaces/types';
-import { LobbyService } from "src/Services/lobby-service";
-import SheetDBClass from "src/Connections/sheetsDb";
-import { CalService } from "src/Services/cal-services";
-import { ShopifyService } from "src/Services/shopify-service";
-import followUpService from "src/Services/followup-service";
 import "dotenv/config";
 
-const host = process.env.BOT_HOST || "http://localhost:3000";
 const logger = new Logger();
+const host = process.env.CHATWOOT_HOST;
+const inboxID = process.env.CHATWOOT_INBOX_ID;
+const accountId = process.env.CHATWOOT_ACCOUNT_ID;
+
 class MediaService {
   private logger = new Logger();
   private mediaHandlers: Record<string, MediaTag>;
@@ -110,9 +109,6 @@ class MediaService {
 class RegexService {
   private config: Config;
   private mediaService: MediaService;
-  private logger: Logger;
-  private lobbyService: LobbyService;
-  private followUpService: any;
 
   constructor(provider: any) {
     this.config = {
@@ -132,8 +128,6 @@ class RegexService {
     };
 
     this.mediaService = new MediaService(provider);
-    this.logger = new Logger();
-    this.lobbyService = new LobbyService();
   }
 
   async handleBlockUser(state: Map<string, any>): Promise<void> {
@@ -162,12 +156,6 @@ class RegexService {
           labels.push(label);
           await chatwootService.setLabels(state.get("phone"), labels);
           if (this.config.notifications === 'true') {
-            // await provider.sendText(
-            //   process.env.BOT_ADMIN_PHONE_NUMBER,
-            //   `La conversación con el nombre ${state.get(
-            //     "name"
-            //   )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la etiqueta ${label}`
-            // );
             logger.log(`La conversación con el nombre ${state.get(
               "name"
             )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la etiqueta ${label}`);
@@ -202,7 +190,7 @@ class RegexService {
     }
   }
 
-  async removePriority(text: string, state: Map<string, any>, provider: any): Promise<string> {
+  async removePriority(text: string, state: Map<string, any>): Promise<string> {
     try {
       const formattedPhoneNumber = removeWhatsAppSuffix(state.get("phone"));
       for (const priority of this.config.priorityName) {
@@ -210,22 +198,68 @@ class RegexService {
         if (priorityRegex.test(text)) {
           await chatwootService.togglePriority(state.get("phone"), priority);
           if (this.config.notifications === 'true') {
-            // await provider.sendText(
-            //   process.env.BOT_ADMIN_PHONE_NUMBER,
-            //   `La conversación con el nombre ${state.get(
-            //     "name"
-            //   )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la prioridad ${priority}`
-            // );
             logger.log(`La conversación con el nombre ${state.get(
               "name"
             )} y el teléfono ${formattedPhoneNumber} ha sido marcada con la prioridad ${priority}`);
           }
-          return text.replace(priorityRegex, "");
+          return text.replace(priorityRegex, "Servicio Técnico");
         }
       }
       return text;
     } catch (error) {
       logger.error(`Error en removePriority: ${error?.message}`);
+      return text;
+    }
+  }
+
+  async removeRecuTags(text: string, state: Map<string, any>): Promise<string> {
+    try {
+      // Regex para encontrar bloques JSON que contengan el parámetro "etiqueta"
+      const jsonBlockRegex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*"etiqueta"\s*:\s*"[^"]*"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+      const matches = text.matchAll(jsonBlockRegex);
+      let result = text;
+      
+      // Procesar cada bloque JSON encontrado
+      for (const match of matches) {
+        try {
+          const jsonString = match[0];
+          const jsonData = JSON.parse(jsonString);
+          
+          // Verificar que tenga el parámetro "etiqueta"
+          if (jsonData.etiqueta) {
+            logger.log(`Procesando etiqueta JSON: ${jsonData.etiqueta}`);
+            
+            // Obtener conversationID para construir las URLs
+            const conversationID = await chatwootService.getConversationID(state.get("phone"));
+            
+            // Agregar campos adicionales a datos_etiqueta
+            const datosEtiqueta = {
+              ...jsonData.datos_etiqueta,
+              url_chat: `${host}/app/accounts/${accountId}/inbox/${inboxID}/conversations/${conversationID}`,
+              history_chat: `${host}/app/accounts/${accountId}/conversations/${conversationID}/messages?after=0`
+            };
+            
+            // Enviar a registerLead con los datos actualizados
+            const response = await recuApiClient.registerLead(jsonData.etiqueta, datosEtiqueta);
+            
+            if (response.success) {
+              logger.log(`Etiqueta ${jsonData.etiqueta} registrada exitosamente`);
+            } else {
+              logger.error(`Error al registrar etiqueta ${jsonData.etiqueta}: ${response.message}`);
+            }
+          }
+          
+          // Eliminar el bloque JSON del texto
+          result = result.replace(jsonString, "");
+          
+        } catch (parseError) {
+          logger.error(`Error al parsear JSON en removeRecuTags: ${parseError?.message}`);
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error(`Error en removeRecuTags: ${error?.message}`);
       return text;
     }
   }
@@ -288,105 +322,14 @@ class RegexService {
     }
   }
 
-  async removeSheetCommand(text: string, state: Map<string, any>): Promise<string> {
-    const sheetDB = new SheetDBClass(process.env.SHEETDB_API_KEY || '',process.env.SHEETDB_ID || '');
-    try {
-      const commandRegex = /&&\s*([\s\S]*?)&&/g;
-      const matches = Array.from(text.matchAll(commandRegex));
-  
-      for (const match of matches) {
-        const commandBlock = match[1].trim();
-        // Split only at the first colon to separate command from JSON data
-        const firstColonIndex = commandBlock.indexOf(':');
-        if (firstColonIndex === -1) {
-          this.logger.error('Command format incorrect, missing colon separator');
-          continue;
-        }
-        
-        const command = commandBlock.substring(0, firstColonIndex).trim();
-        let jsonStr = commandBlock.substring(firstColonIndex + 1).trim();
-        
-        this.logger.log(`Command block: ${commandBlock}`);
-        this.logger.log(`Command: ${command}`);
-        this.logger.log(`JSON string: ${jsonStr}`);
-  
-        if (!command) {
-          this.logger.error('Command not found or empty');
-          continue;
-        }
-  
-        try {
-          // Convert to valid JSON by handling property names without quotes
-          // This approach preserves existing quotes around values
-          const propertyNameRegex = /({|,)\s*([a-zA-Z0-9_]+)\s*:/g;
-          jsonStr = jsonStr.replace(propertyNameRegex, '$1 "$2":');
-
-          if (!jsonStr.endsWith('}')) {
-            jsonStr += '}';
-          }
-          
-          this.logger.log(`Formatted JSON: ${jsonStr}`);
-          const params: any = JSON.parse(jsonStr);
-          this.logger.log(`Sheet Command detected: ${command}`);
-          this.logger.log(`Parameters: ${JSON.stringify(params, null, 2)}`);
-  
-          switch (command.toLowerCase()) {
-            // *send column name and value to sheetDB
-            case 'update': {
-              this.logger.log('Processing update command...');
-              const response = await sheetDB.update(params.filter, params.data);
-              this.logger.log(`Successfully updated record: ${response}`);
-              break;
-            }
-            // *send object to sheetDB
-            case 'create': {
-              this.logger.log('Processing create command...');
-              const response = await sheetDB.create(params);
-              this.logger.log(`Successfully created record: ${response}`);
-              break;
-            }
-            // *send column name and value to sheetDB
-            case 'search': {
-              this.logger.log('Processing search command...');
-              const response = await sheetDB.query(params.filter);
-              this.logger.log(`Successfully searched records: ${response}`);
-              break;
-            }
-            default: {
-              this.logger.log(`Unknown command: ${command}`);
-            }
-          }
-        } catch (parseError) {
-          this.logger.error(`Error parsing command parameters: ${parseError.message}`);
-          this.logger.error(`Attempted to parse: ${jsonStr}`);
-        }
-      }
-  
-      // Remove all commands from text
-      text = text.replace(/&&\s*[\s\S]*?&&/g, '');
-      return text;
-    } catch (error) {
-      this.logger.error(`Error en removeSheetCommand: ${error?.message}`);
-      return text;
-    }
-  }
 
   async processText(text: string, state: Map<string, any>, provider: any): Promise<string> {
     try {
-      // *Followup Integration
-      if (this.config.followUpActivate === "true") {
-        text = await followUpService.leadComplete(text, state.get("phone"));
-      }
-
-      // *Sheet Regex Integration	
-      if (this.config.sheetRegexActivate === "true") {
-        text = await this.removeSheetCommand(text, state);
-      }
 
       // *Remove chatwoot tags
       text = await this.removeLabels(text, state, provider);
       text = await this.removeAgents(text, state);
-      text = await this.removePriority(text, state, provider);
+      text = await this.removePriority(text, state);
 
       // *Remove media tags
       text = await this.removeImageTags(text, state, provider);
@@ -396,62 +339,8 @@ class RegexService {
       // *Remove urls and notify
       text = await this.removeUrlsAndNotify(text, state, provider);
 
-      // *Lobby Integration
-      if (this.config.lobbyActivate === "true") {
-        const response = await this.lobbyService.processTag(text, state);
-        text = response.text;
-        text = await this.removeLabels(text, state, provider);
-        text = await this.removeAgents(text, state);
-        text = await this.removePriority(text, state, provider);
-        text = await this.removeImageTags(text, state, provider);
-        text = await this.removeVideoTags(text, state, provider);
-        text = await this.removeDocumentTags(text, state, provider);
-        text = await this.removeUrlsAndNotify(text, state, provider);
-      }
-
-      // *Shopify Integration
-      if (this.config.shopifyActivate === "true") {
-        const shopifyService = new ShopifyService();
-        const response = await shopifyService.processTag(text, state);
-        text = response.text;
-        text = await this.removeLabels(text, state, provider);
-        text = await this.removeAgents(text, state);
-        text = await this.removePriority(text, state, provider);
-        text = await this.removeImageTags(text, state, provider);
-        text = await this.removeVideoTags(text, state, provider);
-        text = await this.removeDocumentTags(text, state, provider);
-        text = await this.removeUrlsAndNotify(text, state, provider);
-      }
-
-       // *Cal Appointment Integration
-       if (this.config.calAppointmentActivated === "true") {
-        const calService = new CalService();
-        const textResponse = await calService.processCommand(text, state);
-        text = await this.removeLabels(text, state, provider);
-        text = await this.removeAgents(text, state);
-        text = await this.removePriority(text, state, provider);
-        text = await this.removeImageTags(text, state, provider);
-        text = await this.removeVideoTags(text, state, provider);
-        text = await this.removeDocumentTags(text, state, provider);
-        text = await this.removeUrlsAndNotify(text, state, provider);
-        text = textResponse;
-      }
-
-      // Mejora en el manejo del lead_complete
-      if (
-        this.config.followUpActivate === "true" &&
-        text.includes("%%lead_complete%%")
-      ) {
-        try {
-          await this.followUpService.removePhoneNumber(state.get("phone"));
-          text = text.replace("%%lead_complete%%", "");
-          this.logger.log(
-            `Lead complete for ${state.get("phone")}. Removed from followup database.`
-          );
-        } catch (followupError) {
-          this.logger.error(`Error removing phone number from followup: ${followupError?.message}`);
-        }
-      }
+      // *Remove recu tags
+      text = await this.removeRecuTags(text, state);  
 
       // *Return Text
       return text;

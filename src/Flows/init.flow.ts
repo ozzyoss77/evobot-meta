@@ -6,25 +6,14 @@ import { createMessageQueue, QueueConfig } from "src/Utils/enqueue-messages";
 import { inyectDateTime } from "src/Utils/formatter";
 import textFlow from "./text.flow";
 import appwriteService from "src/Connections/appwrite";
-import chatwootService from "src/Connections/chatwoot.class";
 import Logger from "src/Utils/logger";
-import followUpService from "src/Services/followup-service";
 import "dotenv/config";
 
 const botPhoneNumber = process.env.BOT_PHONENUMBER || '000';
 const whatsapp_messages_db = process.env.APPWRITE_WHATSAPP_MESSAGES_DB;
 const whatsapp_messages_collection = process.env.APPWRITE_WHATSAPP_MESSAGES_COLLECTION;
 const whitelist = process.env.BOT_WHITELIST || "false";
-const followUpActivate = process.env.BOT_FOLLOWUP_ACTIVATE || "false";
-const host = process.env.BOT_HOST || "http://localhost:3000";
 const logger = new Logger();
-const announcementMetrics = {
-  messages: process.env.BOT_ANNOUNCEMENT_METRICS_MESSAGES?.split(',').map(msg => msg.trim()) || []
-};
-const announcementMetricsCodes = {
-  codes: process.env.BOT_ANNOUNCEMENT_METRICS_CODES?.split(',').map(msg => msg.trim()) || []
-}
-const announcementMetricsActivate = process.env.BOT_ANNOUNCEMENT_METRICS_ACTIVATE || 'false';
 
 const queueConfig: QueueConfig = {
   gapSeconds: parseInt(process.env.BOT_COUNTDOWN_TIME) || 3000,
@@ -56,16 +45,6 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
     const isBlocked = await checkBlock(state, globalState);
     if (isBlocked) return endFlow();
 
-    // if (announcementMetricsActivate === 'true' && announcementMetrics.messages.includes(ctx.body)) {
-    //   const messageIndex = announcementMetrics.messages.indexOf(ctx.body);
-    //   const correspondingCode = announcementMetricsCodes.codes[messageIndex];
-    //   logger.log(`Mensaje coincidente detectado: ${ctx.body}`);
-    //   logger.log(`Código correspondiente: ${correspondingCode}`);
-    //   const labels = await chatwootService.getLabels(state.get("conversationID")) || [];
-    //   labels.push(correspondingCode);
-    //   await chatwootService.setLabels(state.get("phone"), labels);
-    // }
-
     // *If phone is not whitelisted, end the flow
     if (whitelist === "true") {
       const isWhitelisted = await appwriteService.searchOneDocument(
@@ -76,13 +55,6 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
         state.get("phone")
       );
       if (!isWhitelisted) return endFlow(); // Ends the flow immediately if phone is whitelisted
-    }
-
-    if (followUpActivate === 'true') {
-      const followUpRecord = await followUpService.getFollowUpRecord(state.get("phone"), provider);
-      if (!followUpRecord) {
-        await followUpService.registerIncompleteConversation(state.get("phone"), `${host}/v1/followup`);
-      }
     }
 
     try {
