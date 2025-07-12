@@ -33,7 +33,7 @@ export async function newThread(name: string, slug: string) {
     }
     return response.data.thread;
   } catch (error) {
-    logger.error(`Error creating new thread: ${error.response?.data}`);
+    logger.error(`Error creating new thread: ${error}`);
   }
 }
 
