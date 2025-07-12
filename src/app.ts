@@ -209,7 +209,7 @@ const main = async () => {
   /**
    * *Check Health
    */
-  adapterProvider.server.post(
+  adapterProvider.server.get(
     "/v1/health",
     handleCtx(async (bot, req, res) => {
       try {
