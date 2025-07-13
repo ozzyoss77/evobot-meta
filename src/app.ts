@@ -22,7 +22,6 @@ import botSwitcherFlow from "./Flows/Handlers/bot.switcher";
 import blockFlow from "./Flows/Handlers/block.flow";
 import { idleFlow } from "./Utils/idle";
 import Logger from "src/Utils/logger";
-import { recuMassive } from "./Controllers/recu.controller";
 import 'dotenv/config'
 
 const logger = new Logger();
@@ -219,23 +218,6 @@ const main = async () => {
         logger.error(`Error en health: ${error}`);
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Error en health" }));
-      }
-    })
-  );
-
-  adapterProvider.server.post(
-    "/v1/recu-massive",
-    handleCtx(async (bot, req, res) => {
-      try {
-        if (req.headers['Authorization'] !== recuTokenMassive) {
-          res.writeHead(401, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: "Unauthorized" }));
-        }
-        return await recuMassive(bot, req, res);
-      } catch (error) {
-        logger.error(`Error en recu: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en recu" }));
       }
     })
   );

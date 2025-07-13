@@ -18,13 +18,15 @@ const whitelist = process.env.BOT_WHITELIST || "false";
 const followUpActivate = process.env.BOT_FOLLOWUP_ACTIVATE || "false";
 const host = process.env.BOT_HOST || "http://localhost:3000";
 const logger = new Logger();
-const announcementMetrics = {
-  messages: process.env.BOT_ANNOUNCEMENT_METRICS_MESSAGES?.split(',').map(msg => msg.trim()) || []
-};
-const announcementMetricsCodes = {
-  codes: process.env.BOT_ANNOUNCEMENT_METRICS_CODES?.split(',').map(msg => msg.trim()) || []
-}
-const announcementMetricsActivate = process.env.BOT_ANNOUNCEMENT_METRICS_ACTIVATE || 'false';
+
+// *Detectar anuncios de la empresa
+// const announcementMetrics = {
+//   messages: process.env.BOT_ANNOUNCEMENT_METRICS_MESSAGES?.split(',').map(msg => msg.trim()) || []
+// };
+// const announcementMetricsCodes = {
+//   codes: process.env.BOT_ANNOUNCEMENT_METRICS_CODES?.split(',').map(msg => msg.trim()) || []
+// }
+// const announcementMetricsActivate = process.env.BOT_ANNOUNCEMENT_METRICS_ACTIVATE || 'false';
 
 const queueConfig: QueueConfig = {
   gapSeconds: parseInt(process.env.BOT_COUNTDOWN_TIME) || 3000,
@@ -56,6 +58,7 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
     const isBlocked = await checkBlock(state, globalState);
     if (isBlocked) return endFlow();
 
+    // *Detectar anuncios de la empresa
     // if (announcementMetricsActivate === 'true' && announcementMetrics.messages.includes(ctx.body)) {
     //   const messageIndex = announcementMetrics.messages.indexOf(ctx.body);
     //   const correspondingCode = announcementMetricsCodes.codes[messageIndex];
