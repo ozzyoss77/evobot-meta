@@ -2,14 +2,7 @@ import { createBot, createProvider, createFlow } from '@builderbot/bot'
 import { MemoryDB as Database } from '@builderbot/bot'
 import { MetaProvider as Provider } from '@builderbot/provider-meta'
 import {
-  calendarEvent,
   massiveEvent,
-  updateContact,
-  ghlEvent,
-  hubspotEvent,
-  getTokens,
-  followUp,
-  shopifyConfirmationEvent,
 } from "./Controllers/controllers";
 import { deleteThread } from "src/AIApi/api-llm";
 import initFlow from "./Flows/init.flow";
@@ -77,70 +70,6 @@ const main = async () => {
   );
 
   /**
-   * *Calendar Endpoint
-   */
-  adapterProvider.server.post(
-    "/v1/calendar",
-    handleCtx(async (bot, req, res) => {
-      try {
-        return await calendarEvent(bot, req, res);
-      } catch (error) {
-        logger.error(`Error en calendarEvent: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en calendarEvent" }));
-      }
-    })
-  );
-
-  /**
-   * *Update contact endpoint
-   */
-  adapterProvider.server.post(
-    "/v1/updatecontact",
-    handleCtx(async (bot, req, res) => {
-      try {
-        return await updateContact(req, res);
-      } catch (error) {
-        logger.error(`Error en updateContact: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en updateContact" }));
-      }
-    })
-  );
-
-  /**
-   * *Go High Level endpoint
-   */
-  adapterProvider.server.post(
-    "/v1/ghl",
-    handleCtx(async (bot, req, res) => {
-      try {
-        return await ghlEvent(bot, req, res);
-      } catch (error) {
-        logger.error(`Error en Go High Level endpoint: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en getInstanceState" }));
-      }
-    })
-  );
-
-  /**
-   * *Hubspot endpoint
-   */
-  adapterProvider.server.post(
-    "/v1/hubspot",
-    handleCtx(async (bot, req, res) => {
-      try {
-        return await hubspotEvent(bot, req, res);
-      } catch (error) {
-        logger.error(`Error en hubspotEvent: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en hubspotEvent" }));
-      }
-    })
-  );
-
-  /**
    * *Delete thread endpoint
    */
   adapterProvider.server.post(
@@ -159,57 +88,9 @@ const main = async () => {
   );
 
   /**
-   * *Follow-up endpoint
-   */
-  adapterProvider.server.post(
-    "/v1/followup",
-    handleCtx(async (bot, req, res) => {
-      try {
-        await followUp(bot, req, res);
-      } catch (error) {
-        logger.error(`Error en followUp: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en followUp" }));
-      }
-    })
-  );
-
-  /**
-   * *Shopify Notification endpoint
-   */
-  adapterProvider.server.post(
-    "/v1/shopify",
-    handleCtx(async (bot, req, res) => {
-      try {
-        return await shopifyConfirmationEvent(bot, req, res);
-      } catch (error) {
-        logger.error(`Error en shopifyEvent: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en shopifyEvent" }));
-      }
-    })
-  );
-
-  /**
-   * *Get tokens endpoint
-   */
-  adapterProvider.server.post(
-    "/v1/tokens",
-    handleCtx(async (bot, req, res) => {
-      try {
-        return await getTokens(bot, req, res);
-      } catch (error) {
-        logger.error(`Error en tokens: ${error}`);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Error en tokens" }));
-      }
-    })
-  );
-
-  /**
    * *Check Health
    */
-  adapterProvider.server.post(
+  adapterProvider.server.get(
     "/v1/health",
     handleCtx(async (bot, req, res) => {
       try {

@@ -238,6 +238,8 @@ class RegexService {
               url_chat: `${host}/app/accounts/${accountId}/inbox/${inboxID}/conversations/${conversationID}`,
               history_chat: `${host}/app/accounts/${accountId}/conversations/${conversationID}/messages?after=0`
             };
+
+            console.log(datosEtiqueta);
             
             // Enviar a registerLead con los datos actualizados
             const response = await recuApiClient.registerLead(jsonData.etiqueta, datosEtiqueta);
