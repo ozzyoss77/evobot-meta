@@ -98,12 +98,12 @@ class RecuApiClient {
       logger.error("Not authenticated")
       return {
         "Content-Type": "application/json",
-        Authorization: `jwt ${this.token}`,
+        Authorization: `jwt eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6IkludGVncmF0aW9uSUFQUFMiLCJleHAiOjE3NTI2MTE1MjEsImlhdCI6MTc1MjUyNTEyMX0.RiQvqS59vGBqrYbeiI42BoAY6qkhxMZ840yuls6anGU`,
       }
     }
     return {
       "Content-Type": "application/json",
-      Authorization: `jwt ${this.token}`,
+      Authorization: `jwt eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6IkludGVncmF0aW9uSUFQUFMiLCJleHAiOjE3NTI2MTE1MjEsImlhdCI6MTc1MjUyNTEyMX0.RiQvqS59vGBqrYbeiI42BoAY6qkhxMZ840yuls6anGU`,
     }
   }
 

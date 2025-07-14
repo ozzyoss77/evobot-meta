@@ -71,12 +71,12 @@ export async function getResponse(state, provider) {
     return process.env.BOT_FAILURE_MESSAGE;
   }
 
-  await appwriteService.tokenUsageMetrics(
-    "aiclon-db-metrics",
-    "token-usage-metrics",
-    state.get("phone"),
-    totalTokenCount
-  );
+  // await appwriteService.tokenUsageMetrics(
+  //   "aiclon-db-metrics",
+  //   "token-usage-metrics",
+  //   state.get("phone"),
+  //   totalTokenCount
+  // );
 
   const processedMessage = await regex.processText(textResponse, state, provider);
   return processedMessage;
@@ -99,12 +99,12 @@ export async function getResponseImage(state, buffer, provider) {
     return process.env.BOT_FAILURE_MESSAGE;
   }
 
-  await appwriteService.tokenUsageMetrics(
-    "aiclon-db-metrics",
-    "token-usage-metrics",
-    state.get("phone"),
-    totalTokenCount
-  );
+  // await appwriteService.tokenUsageMetrics(
+  //   "aiclon-db-metrics",
+  //   "token-usage-metrics",
+  //   state.get("phone"),
+  //   totalTokenCount
+  // );
 
   const processedMessage = await regex.processText(textResponse, state, provider);
   return processedMessage;

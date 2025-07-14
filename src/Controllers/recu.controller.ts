@@ -1,7 +1,7 @@
 import chatwootService from "src/Connections/chatwoot.class";
 import Logger from "src/Utils/logger";
 import appwriteService from "src/Connections/appwrite";
-import { newAIResponse } from "src/AIApi/api-llm";
+import { newAIResponse, checkThread, newThread } from "src/AIApi/api-llm";
 import "dotenv/config";
 
 const logger = new Logger();
@@ -44,7 +44,7 @@ function validateRequiredFields(data: any): { isValid: boolean; missingFields: s
   ];
 
   const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
-  
+
   return {
     isValid: missingFields.length === 0,
     missingFields
@@ -58,9 +58,9 @@ export async function recuMassive(bot, req, res) {
     if (!validation.isValid) {
       logger.error(`Campos faltantes: ${validation.missingFields.join(', ')}`);
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ 
-        error: "Campos requeridos faltantes", 
-        missingFields: validation.missingFields 
+      return res.end(JSON.stringify({
+        error: "Campos requeridos faltantes",
+        missingFields: validation.missingFields
       }));
     }
 
@@ -68,8 +68,8 @@ export async function recuMassive(bot, req, res) {
     if (req.body.evento !== 'document') {
       logger.error(`Evento inválido: ${req.body.evento}. Debe ser 'document'`);
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ 
-        error: "Evento inválido. Debe ser 'document'" 
+      return res.end(JSON.stringify({
+        error: "Evento inválido. Debe ser 'document'"
       }));
     }
 
@@ -131,7 +131,7 @@ export async function recuMassive(bot, req, res) {
     const templateBodyParsed = replaceVariables(cuerpo_plantilla, templateVariables);
 
     // Enviar plantilla con documento PDF
-    await bot.provider.sendTemplate(
+    const response = await bot.provider.sendTemplate(
       telefono,
       plantilla,
       'es_Mx', // Asumiendo que el idioma es español
@@ -141,7 +141,10 @@ export async function recuMassive(bot, req, res) {
           parameters: [
             {
               type: "document",
-              link: carta_url,
+              document: {
+                link: carta_url,
+                filename: 'carta.pdf'
+              }
             }
           ]
         },
@@ -158,12 +161,13 @@ export async function recuMassive(bot, req, res) {
             },
             {
               type: "text",
-              text: total_deuda
+              text: `${total_deuda}`
             }
           ]
         }
       ]
     );
+    console.log('response', response);
 
     // Crear contacto en Chatwoot
     const contactID = await chatwootService.getContactID(telefono);
@@ -178,45 +182,27 @@ export async function recuMassive(bot, req, res) {
     }
 
     // // Enviar notas a Chatwoot
-    // await chatwootService.sendNotes(telefono, templateBodyParsed, "outgoing", true);
+    await chatwootService.sendNotes(telefono, templateBodyParsed, "outgoing", true);
 
     // Guardar en Appwrite con todos los nuevos campos
     await appwriteService.createDocument(
       'recu_clients_db',
       'recu_clients',
       {
-        telefono,
-        nombre_deudor,
-        nombre_acreedor,
+        phone:telefono,
+        name: nombre_deudor,
+        businessName: nombre_acreedor,
+        amount: total_deuda,
+        mediaUrl: carta_url,
+        mediaTranscript: carta_texto,
         id_deudor,
-        carta_url,
-        carta_texto,
-        plantilla,
-        cuerpo_plantilla,
-        evento: req.body.evento,
-        primer_descuento_capital,
-        primer_descuento_interes,
-        primer_descuento_honorarios,
-        total_primer_descuento,
-        maximo_descuento_capital,
-        maximo_descuento_interes,
-        maximo_descuento_honorarios,
-        total_maximo_deescuento,
-        valor_cuota_primer_descuento,
-        valor_cuota_maximo_descuento,
-        numero_cuotas,
-        pago_inicial_primer_descuento,
-        pago_inicial_maximo_descuento,
-        primer_fecha_pago,
-        maxima_fecha_pago,
-        total_capital,
-        total_interes,
-        total_honorarios,
-        total_deuda,
-        fecha_envio: new Date().toISOString()
       }
     );
 
+    const threadExists = await checkThread(telefono);
+    if (!threadExists) {
+      await newThread(nombre_deudor, telefono);
+    }
     // Enviar contexto a la IA
     await newAIResponse(telefono, `${JSON.stringify(req.body)}`);
 

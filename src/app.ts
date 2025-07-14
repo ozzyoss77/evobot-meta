@@ -113,13 +113,14 @@ const main = async () => {
   );
 
   adapterProvider.server.post(
-    "/v1/recu-massive",
+    "/v1/envio-plantilla-interaccion",
     handleCtx(async (bot, req, res) => {
       try {
-        if (req.headers['Authorization'] !== recuTokenMassive) {
+        if (req.headers['authorization'] !== recuTokenMassive) {
           res.writeHead(401, { "Content-Type": "application/json" });
           return res.end(JSON.stringify({ error: "Unauthorized" }));
         }
+        console.log(req.body);
         return await recuMassive(bot, req, res);
       } catch (error) {
         logger.error(`Error en recu: ${error}`);

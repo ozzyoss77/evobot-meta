@@ -121,7 +121,7 @@ class AppwriteService {
       );
       return true;
     } catch (error) {
-      this.logger.error(`Error creating document: ${error}`);
+      this.logger.error(`Error creating document token usage metrics: ${error}`);
       return false;
     }
   }
