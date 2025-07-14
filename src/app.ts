@@ -47,11 +47,19 @@ const main = async () => {
   })
   const adapterDB = new Database()
 
-  const { handleCtx, httpServer } = await createBot({
-    flow: adapterFlow,
-    provider: adapterProvider,
-    database: adapterDB,
-  })
+  const { handleCtx, httpServer } = await createBot(
+    {
+      flow: adapterFlow,
+      provider: adapterProvider,
+      database: adapterDB,
+    },
+    {
+      queue: {
+        timeout: 20000,
+        concurrencyLimit: 50,
+      },
+    }
+  )
 
   /**
  * *Massive Event Endpoint
