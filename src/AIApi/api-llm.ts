@@ -66,7 +66,7 @@ export async function newAIResponse(slug: string, message: string, currentAttemp
     return { textResponse, totalTokenCount };
   } catch (error) {
     if (currentAttempt < maxRetries) {
-      logger.log(`Attempt ${currentAttempt} of ${maxRetries} failed, retrying...`);
+      logger.log(`Response from AI API: Attempt ${currentAttempt} of ${maxRetries} failed, retrying...`);
       await new Promise(resolve => setTimeout(resolve, 1000 * currentAttempt));
       return newAIResponse(slug, message, currentAttempt + 1);
     }

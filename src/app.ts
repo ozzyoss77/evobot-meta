@@ -16,6 +16,7 @@ import blockFlow from "./Flows/Handlers/block.flow";
 import { idleFlow } from "./Utils/idle";
 import Logger from "src/Utils/logger";
 import { recuMassive } from "./Controllers/recu.controller";
+import bodyParser from 'body-parser';
 import 'dotenv/config'
 
 const logger = new Logger();
@@ -129,6 +130,8 @@ const main = async () => {
       }
     })
   );
+
+  
 
   httpServer(+PORT)
 }

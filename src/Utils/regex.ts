@@ -215,7 +215,8 @@ class RegexService {
   async removeRecuTags(text: string, state: Map<string, any>): Promise<string> {
     try {
       // Regex para encontrar bloques JSON que contengan el parámetro "etiqueta"
-      const jsonBlockRegex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*"etiqueta"\s*:\s*"[^"]*"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+      // Modificado para capturar el patrón "json { ... }"
+      const jsonBlockRegex = /json\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*"etiqueta"\s*:\s*"[^"]*"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
       const matches = text.matchAll(jsonBlockRegex);
       let result = text;
       
@@ -223,7 +224,9 @@ class RegexService {
       for (const match of matches) {
         try {
           const jsonString = match[0];
-          const jsonData = JSON.parse(jsonString);
+          // Extraer solo la parte JSON (sin la palabra "json")
+          const jsonContent = jsonString.replace(/^json\s*/, '');
+          const jsonData = JSON.parse(jsonContent);
           
           // Verificar que tenga el parámetro "etiqueta"
           if (jsonData.etiqueta) {
@@ -252,7 +255,7 @@ class RegexService {
             }
           }
           
-          // Eliminar el bloque JSON del texto
+          // Eliminar el bloque JSON completo del texto (incluyendo "json")
           result = result.replace(jsonString, "");
           
         } catch (parseError) {
