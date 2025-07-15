@@ -214,18 +214,11 @@ class RegexService {
 
   async removeRecuTags(text: string, state: Map<string, any>): Promise<string> {
     try {
-      // Regex para encontrar bloques JSON que contengan el parámetro "etiqueta"
-      // Modificado para capturar el patrón "json { ... }"
-      const jsonBlockRegex = /json\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*"etiqueta"\s*:\s*"[^"]*"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
-      const matches = text.matchAll(jsonBlockRegex);
       let result = text;
       
-      // Procesar cada bloque JSON encontrado
-      for (const match of matches) {
+      // Función auxiliar para procesar el JSON
+      const processJsonData = async (jsonContent: string, originalMatch: string) => {
         try {
-          const jsonString = match[0];
-          // Extraer solo la parte JSON (sin la palabra "json")
-          const jsonContent = jsonString.replace(/^json\s*/, '');
           const jsonData = JSON.parse(jsonContent);
           
           // Verificar que tenga el parámetro "etiqueta"
@@ -246,21 +239,40 @@ class RegexService {
             console.log(datosEtiqueta);
             
             // Enviar a registerLead con los datos actualizados
-            const response = await recuApiClient.registerLead(jsonData.etiqueta, datosEtiqueta);
+            const response = await recuApiClient.registerLead(jsonData.etiqueta, datosEtiqueta) as any;
+            console.log(response);
             
-            if (response.success) {
+            if (response && response.status === 'success') {
               logger.log(`Etiqueta ${jsonData.etiqueta} registrada exitosamente`);
             } else {
               logger.error(`Error al registrar etiqueta ${jsonData.etiqueta}: ${response.message}`);
             }
           }
           
-          // Eliminar el bloque JSON completo del texto (incluyendo "json")
-          result = result.replace(jsonString, "");
+          // Eliminar el bloque JSON completo del texto
+          result = result.replace(originalMatch, "");
           
         } catch (parseError) {
           logger.error(`Error al parsear JSON en removeRecuTags: ${parseError?.message}`);
         }
+      };
+
+      // 1. Buscar JSON con backticks de markdown
+      const jsonBlockWithBackticksRegex = /```\s*json\s*(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*"etiqueta"\s*:\s*"[^"]*"[^{}]*(?:\{[^{}]*\}[^{}]*)*\})\s*```/g;
+      const backticksMatches = result.matchAll(jsonBlockWithBackticksRegex);
+      
+      for (const match of backticksMatches) {
+        const jsonContent = match[1]; // El JSON sin los backticks
+        await processJsonData(jsonContent, match[0]);
+      }
+
+      // 2. Buscar JSON sin backticks que contenga "etiqueta"
+      const jsonWithoutBackticksRegex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*"etiqueta"\s*:\s*"[^"]*"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+      const directMatches = result.matchAll(jsonWithoutBackticksRegex);
+      
+      for (const match of directMatches) {
+        const jsonContent = match[0]; // El JSON completo
+        await processJsonData(jsonContent, match[0]);
       }
       
       return result;

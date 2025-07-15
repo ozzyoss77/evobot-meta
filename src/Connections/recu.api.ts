@@ -27,7 +27,7 @@ class RecuApiClient {
   private readonly TOKEN_EXPIRY = 30 * 24 * 60 * 60 // 30 días en segundos
 
   async login(username: string, password: string): Promise<{ access_token: string, token_type: string }> {
-    const response = await fetch(`${this.baseUrl}/login`, {
+    const response = await fetch(`https://pruebas.recu.com.co/omni/api/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
