@@ -1,6 +1,5 @@
 import chatwootService from "src/Connections/chatwoot.class";
 import Logger from "src/Utils/logger";
-import appwriteService from "src/Connections/appwrite";
 import { newAIResponse, checkThread, newThread } from "src/AIApi/api-llm";
 import "dotenv/config";
 
@@ -130,43 +129,44 @@ export async function recuMassive(bot, req, res) {
 
     const templateBodyParsed = replaceVariables(cuerpo_plantilla, templateVariables);
 
-    // // Enviar plantilla con documento PDF
-    // await bot.provider.sendTemplate(
-    //   telefono,
-    //   plantilla,
-    //   'es_Mx', // Asumiendo que el idioma es español
-    //   [
-    //     {
-    //       type: "header",
-    //       parameters: [
-    //         {
-    //           type: "document",
-    //           document: {
-    //             link: carta_url,
-    //             filename: 'carta.pdf'
-    //           }
-    //         }
-    //       ]
-    //     },
-    //     {
-    //       type: "body",
-    //       parameters: [
-    //         {
-    //           type: "text",
-    //           text: nombre_deudor
-    //         },
-    //         {
-    //           type: "text",
-    //           text: nombre_acreedor
-    //         },
-    //         {
-    //           type: "text",
-    //           text: `${total_deuda}`
-    //         }
-    //       ]
-    //     }
-    //   ]
-    // );
+    // Enviar plantilla con documento PDF
+    const messageSended = await bot.provider.sendTemplate(
+      telefono,
+      plantilla,
+      'es_Mx', // Asumiendo que el idioma es español
+      [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "document",
+              // document: {
+              //   link: carta_url,
+              //   filename: 'carta.pdf'
+              // }
+            }
+          ]
+        },
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              text: nombre_deudor
+            },
+            {
+              type: "text",
+              text: nombre_acreedor
+            },
+            {
+              type: "text",
+              text: `${total_deuda}`
+            }
+          ]
+        }
+      ]
+    );
+    console.log(messageSended);
 
     // Crear contacto en Chatwoot
     const contactID = await chatwootService.getContactID(telefono);
@@ -182,22 +182,6 @@ export async function recuMassive(bot, req, res) {
 
     // // Enviar notas a Chatwoot
     await chatwootService.sendNotes(telefono, templateBodyParsed, "outgoing", true);
-
-    // // Guardar en Appwrite con todos los nuevos campos
-    // const response = await appwriteService.createDocument(
-    //   'recu_clients_db',
-    //   'recu_clients',
-    //   {
-    //     phone: telefono,
-    //     name: nombre_deudor,
-    //     businessName: nombre_acreedor,
-    //     mediaUrl: carta_url,
-    //     mediaTranscript: carta_texto,
-    //     id_deudor: id_deudor,
-    //     amount: total_deuda,
-    //   }
-    // );
-    // console.log(response);
 
     const threadExists = await checkThread(telefono);
     if (!threadExists) {

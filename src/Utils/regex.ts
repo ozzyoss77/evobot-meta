@@ -235,8 +235,6 @@ class RegexService {
               history_chat: `${host}/app/accounts/${accountId}/conversations/${conversationID}/messages?after=0`,
               contacto_whatsapp: state.get("phone")
             };
-
-            console.log(datosEtiqueta);
             
             // Enviar a registerLead con los datos actualizados
             const response = await recuApiClient.registerLead(jsonData.etiqueta, datosEtiqueta) as any;

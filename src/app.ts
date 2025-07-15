@@ -120,7 +120,6 @@ const main = async () => {
           res.writeHead(401, { "Content-Type": "application/json" });
           return res.end(JSON.stringify({ error: "Unauthorized" }));
         }
-        console.log(req.body);
         return await recuMassive(bot, req, res);
       } catch (error) {
         logger.error(`Error en recu: ${error}`);
