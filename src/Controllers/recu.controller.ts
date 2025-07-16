@@ -74,10 +74,8 @@ export async function recuMassive(bot, req, res) {
 
     const {
       telefono,
-      carta_texto,
       carta_url,
       nombre_deudor,
-      id_deudor,
       nombre_acreedor,
       plantilla,
       cuerpo_plantilla,
@@ -140,10 +138,10 @@ export async function recuMassive(bot, req, res) {
           parameters: [
             {
               type: "document",
-              // document: {
-              //   link: carta_url,
-              //   filename: 'carta.pdf'
-              // }
+              document: {
+                link: carta_url,
+                filename: 'carta.pdf'
+              }
             }
           ]
         },
@@ -166,7 +164,14 @@ export async function recuMassive(bot, req, res) {
         }
       ]
     );
-    console.log(messageSended);
+
+    if (messageSended?.response?.status === 400) {
+      logger.error(`Error al enviar plantilla: ${messageSended.response.status}`);
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({
+        error: "Error al enviar plantilla"
+      }));
+    }
 
     // Crear contacto en Chatwoot
     const contactID = await chatwootService.getContactID(telefono);
