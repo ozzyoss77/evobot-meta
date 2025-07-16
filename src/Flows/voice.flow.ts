@@ -58,7 +58,7 @@ async function init(state, provider, endFlow) {
       const intent = await sendMediaFormated(state.get('phone'), 'audio', url, provider);
       const conversationID = await chatwootService.getConversationID(state.get("phone"));
       await chatwootService.sendMedia(conversationID, '', "outgoing", blob, "audio", true);
-      if (!intent) {
+      if (intent === undefined || intent === null) {
         logger.log(`No se pudo enviar el audio a ${state.get("phone")}`);
         await sendTextFormated(state.get("phone"), state.get("response"), provider);
         await chatwootService.sendNotes(state.get("phone"), state.get("response"), "outgoing", true);
