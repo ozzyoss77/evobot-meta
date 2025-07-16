@@ -1,5 +1,5 @@
 diff --git a/dist/index.cjs b/dist/index.cjs
-index 7aad527fc317f6ce42d6520b54bf7b63f0541681..5b0cce020d0ebe22cb22d4ce86ee92c7a190fd81 100644
+index 7aad527fc317f6ce42d6520b54bf7b63f0541681..8531dfd66d5c023a27813d3ed879e84f44e920a8 100644
 --- a/dist/index.cjs
 +++ b/dist/index.cjs
 @@ -13066,7 +13066,7 @@ async function getMediaUrl(version, IdMedia, numberId, Token) {
@@ -115,17 +115,20 @@ index 7aad527fc317f6ce42d6520b54bf7b63f0541681..5b0cce020d0ebe22cb22d4ce86ee92c7
                          jwtToken,
                          numberId,
                          version,
-@@ -13920,6 +13933,24 @@ class MetaProvider extends bot.ProviderClass {
+@@ -13920,6 +13933,27 @@ class MetaProvider extends bot.ProviderClass {
                  body.context = { message_id: context };
              return this.sendMessageMeta(body);
          };
 +		this.sendMediaUrl = async (to, type, url, caption = '', filename = '') => {
 +			const mediaContent = {
 +				link: url,
-+				caption: caption,
 +			}
 +			if (filename) {
 +				mediaContent.filename = filename;
++				mediaContent.caption = caption;
++			}
++			if (url === 'image' || url === 'video') {
++				mediaContent.caption = caption;
 +			}
 +			to = parseMetaNumber(to);
 +			const body = {
@@ -140,7 +143,7 @@ index 7aad527fc317f6ce42d6520b54bf7b63f0541681..5b0cce020d0ebe22cb22d4ce86ee92c7
          this.sendReaction = async (to, react) => {
              to = parseMetaNumber(to);
              const body = {
-@@ -13988,7 +14019,7 @@ class MetaProvider extends bot.ProviderClass {
+@@ -13988,7 +14022,7 @@ class MetaProvider extends bot.ProviderClass {
              };
              return this.sendMessageMeta(body);
          };
@@ -149,3 +152,27 @@ index 7aad527fc317f6ce42d6520b54bf7b63f0541681..5b0cce020d0ebe22cb22d4ce86ee92c7
              to = parseMetaNumber(to);
              const body = {
                  messaging_product: 'whatsapp',
+diff --git a/dist/interface/meta.d.ts b/dist/interface/meta.d.ts
+index bf3841521b5ebc02b9187e99f24829b3c15b2734..3d23cf06570f30ae3c43f502edae887ad0727cc4 100644
+--- a/dist/interface/meta.d.ts
++++ b/dist/interface/meta.d.ts
+@@ -9,6 +9,7 @@ export interface MetaInterface {
+     sendVideo: (to: string, pathVideo: string | null, caption: string, context: string | null) => Promise<any>;
+     sendVideoUrl: (to: string, url: string, caption: string, context: string | null) => Promise<void>;
+     sendMedia: (to: string, text: string, mediaInput: string, context: string | null) => Promise<any>;
++    sendMediaUrl: (to: string, type: string, url: string, caption: string, filename: string) => Promise<void>;
+     sendList: (to: string, list: MetaList) => Promise<any>;
+     sendListComplete: (to: string, header: string, text: string, footer: string, button: string, list: Record<string, any>) => Promise<void>;
+     sendButtons: (to: string, buttons: Button[], text: string) => Promise<any>;
+diff --git a/dist/meta/provider.d.ts b/dist/meta/provider.d.ts
+index 7b19c8dbb215d6fda6f03ed897b6411438a72cea..1ea853d0621489550fa92cccecc91dee6126b32d 100644
+--- a/dist/meta/provider.d.ts
++++ b/dist/meta/provider.d.ts
+@@ -34,6 +34,7 @@ declare class MetaProvider extends ProviderClass<MetaInterface> implements MetaI
+     sendVideo: (to: string, pathVideo: any, caption: string, context?: any) => Promise<any>;
+     sendVideoUrl: (to: string, url: string, caption?: string, context?: any) => Promise<any>;
+     sendMedia: (to: string, text: string, mediaInput: string, context?: any) => Promise<any>;
++    sendMediaUrl: (to: string, type: string, url: string, caption: string, filename: string) => Promise<any>;
+     sendList: (to: string, list: MetaList) => Promise<any>;
+     sendListComplete: (to: string, header: string, text: string, footer: string, button: string, list: Record<string, any>) => Promise<any>;
+     sendButtons: (to: string, buttons: Button[], text: string) => Promise<any>;

@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   '@builderbot/provider-meta':
-    hash: m36c7l73ubap7tm7v77iy6pebu
+    hash: czrgsbm2zz4tbw3edbu6pdqhvq
     path: patches/@builderbot__provider-meta.patch
 
 importers:
@@ -18,7 +18,7 @@ importers:
         version: 1.2.9
       '@builderbot/provider-meta':
         specifier: 1.2.9
-        version: 1.2.9(patch_hash=m36c7l73ubap7tm7v77iy6pebu)
+        version: 1.2.9(patch_hash=czrgsbm2zz4tbw3edbu6pdqhvq)
       axios:
         specifier: ^1.9.0
         version: 1.10.0
@@ -1689,7 +1689,7 @@ snapshots:
       - debug
       - supports-color
 
-  '@builderbot/provider-meta@1.2.9(patch_hash=m36c7l73ubap7tm7v77iy6pebu)':
+  '@builderbot/provider-meta@1.2.9(patch_hash=czrgsbm2zz4tbw3edbu6pdqhvq)':
     dependencies:
       axios: 1.10.0
       body-parser: 1.20.3
