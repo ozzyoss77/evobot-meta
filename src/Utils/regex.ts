@@ -338,6 +338,79 @@ class RegexService {
     }
   }
 
+  private async finalTextValidation(text: string, state: Map<string, any>): Promise<string> {
+    try {
+      let cleanedText = text;
+      let foundPatterns = [];
+
+      // Eliminar cualquier patrón %%...%% residual
+      const percentPatternRegex = /%%[^%]*%%/g;
+      const percentMatches = cleanedText.match(percentPatternRegex);
+      if (percentMatches) {
+        foundPatterns.push(...percentMatches);
+        cleanedText = cleanedText.replace(percentPatternRegex, '');
+      }
+
+      // Eliminar cualquier patrón &&...&& residual  
+      const ampersandPatternRegex = /&&[^&]*&&/g;
+      const ampersandMatches = cleanedText.match(ampersandPatternRegex);
+      if (ampersandMatches) {
+        foundPatterns.push(...ampersandMatches);
+        cleanedText = cleanedText.replace(ampersandPatternRegex, '');
+      }
+
+      // Eliminar patrones de comandos con llaves {}
+      const bracePatternRegex = /\{\{[^}]*\}\}/g;
+      const braceMatches = cleanedText.match(bracePatternRegex);
+      if (braceMatches) {
+        foundPatterns.push(...braceMatches);
+        cleanedText = cleanedText.replace(bracePatternRegex, '');
+      }
+
+      // Eliminar patrones de comandos con corchetes []
+      const bracketPatternRegex = /\[\[[^\]]*\]\]/g;
+      const bracketMatches = cleanedText.match(bracketPatternRegex);
+      if (bracketMatches) {
+        foundPatterns.push(...bracketMatches);
+        cleanedText = cleanedText.replace(bracketPatternRegex, '');
+      }
+
+      // Eliminar patrones de comandos con símbolos especiales
+      const specialPatternRegex = /\$\$[^$]*\$\$/g;
+      const specialMatches = cleanedText.match(specialPatternRegex);
+      if (specialMatches) {
+        foundPatterns.push(...specialMatches);
+        cleanedText = cleanedText.replace(specialPatternRegex, '');
+      }
+
+      // Eliminar cualquier patrón que empiece con @ seguido de caracteres alfanuméricos
+      const atPatternRegex = /@[a-zA-Z0-9_]+/g;
+      const atMatches = cleanedText.match(atPatternRegex);
+      if (atMatches) {
+        foundPatterns.push(...atMatches);
+        cleanedText = cleanedText.replace(atPatternRegex, '');
+      }
+
+      // Eliminar cualquier patrón que empiece con # seguido de caracteres alfanuméricos
+      const hashPatternRegex = /#[a-zA-Z0-9_]+/g;
+      const hashMatches = cleanedText.match(hashPatternRegex);
+      if (hashMatches) {
+        foundPatterns.push(...hashMatches);
+        cleanedText = cleanedText.replace(hashPatternRegex, '');
+      }
+
+      // Log si se encontraron patrones residuales
+      if (foundPatterns.length > 0) {
+        logger.log(`Patrones residuales eliminados para ${state.get("phone")}: ${foundPatterns.join(', ')}`);
+      }
+
+      return cleanedText;
+    } catch (error) {
+      logger.error(`Error en finalTextValidation: ${error?.message}`);
+      return text;
+    }
+  }
+
 
   async processText(text: string, state: Map<string, any>, provider: any): Promise<string> {
     try {
@@ -356,7 +429,10 @@ class RegexService {
       text = await this.removeUrlsAndNotify(text, state, provider);
 
       // *Remove recu tags
-      text = await this.removeRecuTags(text, state);  
+      text = await this.removeRecuTags(text, state);
+
+      // *Final text validation
+      text = await this.finalTextValidation(text, state);
 
       // *Return Text
       return text;

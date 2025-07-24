@@ -19,6 +19,9 @@ export type EtiquetaTipo =
   | "no_desea_negociar"
   | "propuesta_fuera_limites"
   | "acuerdo_de_pago"
+  | "objecion_factura_crédito"
+  | "objecion_producto_servicio"
+  | "indica_pago"
 
 class RecuApiClient {
   private baseUrl = recuHost
