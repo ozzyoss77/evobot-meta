@@ -341,7 +341,7 @@ class RegexService {
   private async finalTextValidation(text: string, state: Map<string, any>): Promise<string> {
     try {
       let cleanedText = text;
-      let foundPatterns = [];
+      const foundPatterns = [];
 
       // Eliminar cualquier patrón %%...%% residual
       const percentPatternRegex = /%%[^%]*%%/g;
