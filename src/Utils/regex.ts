@@ -392,7 +392,7 @@ class RegexService {
       }
 
       // Eliminar etiquetas think <think> </think>
-      const thinkPatternRegex = /<think>.*<\/think>/g;
+      const thinkPatternRegex = /<think>[\s\S]*?<\/think>/g;
       const thinkMatches = cleanedText.match(thinkPatternRegex);
       if (thinkMatches) {
         foundPatterns.push(...thinkMatches);
