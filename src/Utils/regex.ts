@@ -383,20 +383,20 @@ class RegexService {
         cleanedText = cleanedText.replace(specialPatternRegex, '');
       }
 
-      // Eliminar cualquier patrón que empiece con @ seguido de caracteres alfanuméricos
-      const atPatternRegex = /@[a-zA-Z0-9_]+/g;
-      const atMatches = cleanedText.match(atPatternRegex);
-      if (atMatches) {
-        foundPatterns.push(...atMatches);
-        cleanedText = cleanedText.replace(atPatternRegex, '');
-      }
-
       // Eliminar cualquier patrón que empiece con # seguido de caracteres alfanuméricos
       const hashPatternRegex = /#[a-zA-Z0-9_]+/g;
       const hashMatches = cleanedText.match(hashPatternRegex);
       if (hashMatches) {
         foundPatterns.push(...hashMatches);
         cleanedText = cleanedText.replace(hashPatternRegex, '');
+      }
+
+      // Eliminar etiquetas think <think> </think>
+      const thinkPatternRegex = /<think>.*<\/think>/g;
+      const thinkMatches = cleanedText.match(thinkPatternRegex);
+      if (thinkMatches) {
+        foundPatterns.push(...thinkMatches);
+        cleanedText = cleanedText.replace(thinkPatternRegex, '');
       }
 
       // Log si se encontraron patrones residuales
