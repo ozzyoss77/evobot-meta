@@ -391,12 +391,19 @@ class RegexService {
         cleanedText = cleanedText.replace(hashPatternRegex, '');
       }
 
-      // Eliminar etiquetas think <think> </think>
-      const thinkPatternRegex = /<think>[\s\S]*?<\/think>/g;
+      // Eliminar etiquetas think <think> </think> (con manejo robusto de espacios y saltos de línea)
+      const thinkPatternRegex = /<think\s*>[\s\S]*?<\/think\s*>/gi;
       const thinkMatches = cleanedText.match(thinkPatternRegex);
       if (thinkMatches) {
         foundPatterns.push(...thinkMatches);
         cleanedText = cleanedText.replace(thinkPatternRegex, '');
+      }
+      
+      // Fallback: eliminar cualquier bloque que empiece con <think> sin etiqueta de cierre
+      const openThinkRegex = /<think\s*>[\s\S]*$/gi;
+      if (openThinkRegex.test(cleanedText)) {
+        cleanedText = cleanedText.replace(openThinkRegex, '');
+        logger.log(`Eliminado bloque <think> sin cierre para ${state.get("phone")}`);
       }
 
       // Log si se encontraron patrones residuales
