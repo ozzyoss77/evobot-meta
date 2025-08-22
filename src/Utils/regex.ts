@@ -232,7 +232,7 @@ class RegexService {
             const datosEtiqueta = {
               ...jsonData.datos_etiqueta,
               url_chat: `${host}/app/accounts/${accountId}/inbox/${inboxID}/conversations/${conversationID}`,
-              history_chat: `${host}/app/accounts/${accountId}/conversations/${conversationID}/messages?after=0`,
+              history_chat: `${host}/api/v1/accounts/${accountId}/conversations/${conversationID}/messages?after=0`,
               contacto_whatsapp: state.get("phone")
             };
             
