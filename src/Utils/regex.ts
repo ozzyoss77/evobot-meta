@@ -238,7 +238,7 @@ class RegexService {
             
             // Enviar a registerLead con los datos actualizados
             const response = await recuApiClient.registerLead(jsonData.etiqueta, datosEtiqueta) as any;
-            console.log(response);
+            logger.log(response);
 
             if (response && response.status === 'success') {
               logger.log(`Etiqueta ${jsonData.etiqueta} registrada exitosamente`);
