@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios'
 import Logger from 'src/Utils/logger';
 
 const logger = new Logger();
@@ -6,20 +6,50 @@ const logger = new Logger();
 export class CalApiClient {
   private baseUrl: string;
   private apiKey: string;
+  private axiosInstance: AxiosInstance;
 
   constructor(apiKey: string) {
     this.baseUrl = 'https://api.cal.com/v2';
     this.apiKey = apiKey;
+    
+    // Crear instancia con interceptors
+    this.axiosInstance = axios.create({
+      baseURL: this.baseUrl,
+      timeout: 30000,
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Interceptors estilo VTEX
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        logger.log(`📅 Cal.com API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        return config;
+      },
+      (error) => {
+        console.error('❌ Cal.com API Request Error:', error);
+        return Promise.reject(error);
+      }
+    );
+
+    this.axiosInstance.interceptors.response.use(
+      (response) => {
+        logger.log(`✅ Cal.com API Response: ${response.status} ${response.config.url}`);
+        return response;
+      },
+      (error) => {
+        console.error('❌ Cal.com API Response Error:', error.response?.status, error.response?.data);
+        return Promise.reject(error);
+      }
+    );
   }
 
-  /**
-   * Método 1: Verifica si una fecha está disponible en el calendario.
-   * Se asume que existe un endpoint GET /availability que recibe la fecha.
-   * @param date Fecha a verificar
-   * @returns Promise<boolean> true si está disponible, false en caso contrario
-   */
   public async checkAvailability(date: string): Promise<boolean> {
-    try {// Construir los parámetros de la consulta
+    try {
+      logger.log(`🔍 Cal.com: Checking availability for date: ${date}`);
+      
       const params = {
         eventTypeId: process.env.CAL_EVENT_TYPE_ID || "",
         start: `${date}T00:00:00Z`,
@@ -27,62 +57,50 @@ export class CalApiClient {
         timeZone: process.env.BOT_TIMEZONE || "UTC"
       };
 
-      // Realizar la solicitud GET al endpoint /v2/slots
-      const response = await axios.get(`${this.baseUrl}/slots`, {
+      const response = await this.axiosInstance.get(`/slots`, {
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
           'cal-api-version': '2024-09-04',
-          'Content-Type': 'application/json'
         },
         params
       });
+      
+      logger.log(`✅ Cal.com: Availability check completed for ${date}`);
       return response.data;
-
-      // Verificar si hay slots disponibles en la respuesta
-      // const slots = response.data;
-      // return slots && slots.length > 0;
     } catch (error) {
-      logger.error(`Error al verificar disponibilidad: ${error}`);
+      logger.error(`❌ Cal.com Error checking availability for ${date}: ${error}`);
       return false;
     }
   }
 
-  /**
-   * Método 2: Consulta el endpoint de un tipo de evento y retorna los bookingFields obligatorios.
-   * Se realiza una petición GET a /event-types/{eventTypeId}.
-   * @param eventTypeId Identificador del tipo de evento
-   * @returns Promise<BookingField[]> Arreglo con los bookingFields que tienen required === true
-   */
   public async getRequiredBookingFields(): Promise<any> {
     try {
-      const { data } = await axios.get(`${this.baseUrl}/event-types/${process.env.CAL_EVENT_TYPE_ID || ""}`, {
+      logger.log(`📋 Cal.com: Fetching required booking fields`);
+      
+      const { data } = await this.axiosInstance.get(`/event-types/${process.env.CAL_EVENT_TYPE_ID || ""}`, {
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
           'cal-api-version': '2024-06-14',
-          'Content-Type': 'application/json'
         }
       });
-      const requiredFields: Record<string, boolean> = {}; // Declaración de requiredFields
+      
+      const requiredFields: Record<string, boolean> = {};
       data.data.bookingFields.forEach(field => {
         if (field.required === true && field.slug !== 'title') {
           requiredFields[field.slug] = true;
         }
       });
+      
+      logger.log(`✅ Cal.com: Found ${Object.keys(requiredFields).length} required fields`);
       return requiredFields;
     } catch (error) {
-      logger.error(`Error al obtener bookingFields: ${error}`);
+      logger.error(`❌ Cal.com Error fetching booking fields: ${error}`);
       return [];
     }
   }
 
-  /**
-   * Método 3: Agenda una cita en el calendario.
-   * Se asume que el endpoint para crear una cita es POST /appointments.
-   * @param paramsObject Objeto con los datos necesarios para agendar la cita
-   * @returns Promise<any> Respuesta de la API luego de agendar la cita
-   */
   public async scheduleAppointment(paramsObject: any): Promise<any> {
     try {
+      logger.log(`🗓️ Cal.com: Scheduling appointment for ${paramsObject.name} (${paramsObject.email})`);
+      
       const { start, name, email, ...otherFields } = paramsObject;
       const payload = {
         start,
@@ -96,18 +114,17 @@ export class CalApiClient {
           ...otherFields
         }
       }
-      const response = await axios.post(`${this.baseUrl}/bookings`,
-        payload,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'cal-api-version': '2024-08-13',
-            'Content-Type': 'application/json'
-          }
-        });
+      
+      const response = await this.axiosInstance.post(`/bookings`, payload, {
+        headers: {
+          'cal-api-version': '2024-08-13',
+        }
+      });
+      
+      logger.log(`✅ Cal.com: Appointment scheduled successfully for ${name}`);
       return response.data;
     } catch (error) {
-      logger.error(`Error al agendar la cita: ${JSON.stringify(error)}`);
+      logger.error(`❌ Cal.com Error scheduling appointment: ${JSON.stringify(error)}`);
       return false;
     }
   }

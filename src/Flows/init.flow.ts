@@ -92,7 +92,7 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
       enqueueMessages(ctx.from, ctx.body, async (messages) => {
         const time = inyectDateTime();
         if (ctx.quoted !== null) {
-          const quotedMessage = await appwriteService.searchOneDocument(whatsapp_messages_db, whatsapp_messages_collection, "equal", "wamid", ctx.quoted);
+          const quotedMessage = await appwriteService.getDocumentByAttribute(whatsapp_messages_db, whatsapp_messages_collection, "equal", "wamid", ctx.quoted);
           
           let messageContent = '';
           let imageBuffer = null;
