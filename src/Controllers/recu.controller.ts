@@ -3,6 +3,9 @@ import Logger from "src/Utils/logger";
 import { newAIResponse, checkThread, newThread } from "src/AIApi/api-llm";
 import "dotenv/config";
 
+const host = process.env.CHATWOOT_HOST;
+const accountId = process.env.CHATWOOT_ACCOUNT_ID;
+
 const logger = new Logger();
 
 function replaceVariables(text: string, variables: { [key: string]: string }): string {
@@ -196,8 +199,13 @@ export async function recuMassive(bot, req, res) {
     await newAIResponse(telefono, `${JSON.stringify(req.body)}`);
 
     logger.log(`Plantilla enviada a ${telefono}`);
+
+    const responseToRecu = {
+      status: 'enviado',
+      history_chat: `${host}/api/v1/accounts/${accountId}/conversations/${conversationID}/messages?after=0`
+    }
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ status: "enviado" }));
+    return res.end(JSON.stringify(responseToRecu));
 
   } catch (error) {
     logger.error(`Error en recuMassive: ${error}`);
