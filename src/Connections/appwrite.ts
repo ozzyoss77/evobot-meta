@@ -48,13 +48,13 @@ class AppwriteService {
       );
       if (response.data.documents.length === 0) {
         this.logger.log(`📭 Appwrite: No document found in ${collectionId} for ${attribute}=${value}`);
-        return false;
+        return null;
       }
       this.logger.log(`✅ Appwrite: Document found in ${collectionId} for ${attribute}=${value}`);
-      return true;
+      return response.data.documents[0];
     } catch (error) {
       this.logger.error(`❌ Appwrite: Error searching document in ${collectionId} - ${error}`);
-      return false;
+      return null;
     }
   }
 
