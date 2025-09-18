@@ -183,12 +183,13 @@ export async function recuMassive(bot, req, res) {
     }
 
     // Crear conversación en Chatwoot
-    const conversationID = await chatwootService.getConversationID(telefono);
+    let conversationID = await chatwootService.getConversationID(telefono);
+
     if (!conversationID) {
       await chatwootService.createConversation(telefono, templateBodyParsed);
     }
 
-    // // Enviar notas a Chatwoot
+    // Enviar notas a Chatwoot
     await chatwootService.sendNotes(telefono, templateBodyParsed, "outgoing", true);
 
     const threadExists = await checkThread(telefono);
@@ -199,6 +200,11 @@ export async function recuMassive(bot, req, res) {
     await newAIResponse(telefono, `${JSON.stringify(req.body)}`);
 
     logger.log(`Plantilla enviada a ${telefono}`);
+
+    // Verificación adicional por si la conversación aún no está disponible
+    if (!conversationID) {
+      conversationID = await chatwootService.getConversationID(telefono);
+    }
 
     const responseToRecu = {
       status: 'enviado',
