@@ -4,6 +4,7 @@ import { MetaProvider as Provider } from "@builderbot/provider-meta";
 import { checkBlock } from "src/Utils/checkblock";
 import { createMessageQueue, QueueConfig } from "src/Utils/enqueue-messages";
 import { inyectDateTime } from "src/Utils/formatter";
+import { getCountryFromPhone } from "src/Utils/country-detector";
 import textFlow from "./text.flow";
 import appwriteService from "src/Connections/appwrite";
 import chatwootService from "src/Connections/chatwoot.class";
@@ -16,6 +17,7 @@ const whatsapp_messages_db = process.env.APPWRITE_WHATSAPP_MESSAGES_DB;
 const whatsapp_messages_collection = process.env.APPWRITE_WHATSAPP_MESSAGES_COLLECTION;
 const whitelist = process.env.BOT_WHITELIST || "false";
 const followUpActivate = process.env.BOT_FOLLOWUP_ACTIVATE || "false";
+const countryDetectionActivate = process.env.BOT_COUNTRY_DETECTION_ACTIVATE || "false";
 const host = process.env.BOT_HOST || "http://localhost:3000";
 const logger = new Logger();
 
@@ -91,6 +93,16 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
     try {
       enqueueMessages(ctx.from, ctx.body, async (messages) => {
         const time = inyectDateTime();
+        
+        // Detectar país del número de teléfono si está activado
+        let countryInfo = '';
+        if (countryDetectionActivate === 'true') {
+          const country = getCountryFromPhone(state.get("phone"));
+          if (country) {
+            countryInfo = `País: ${country}\n`;
+          }
+        }
+        
         if (ctx.quoted !== null) {
           const quotedMessage = await appwriteService.getDocumentByAttribute(whatsapp_messages_db, whatsapp_messages_collection, "equal", "wamid", ctx.quoted);
           
@@ -114,14 +126,14 @@ const initFlow = addKeyword<Provider, Database>(EVENTS.WELCOME).addAction(
             }
           }
           await state.update({
-            message: `Fecha y hora actual: ${time}\nMensaje citado: ${messageContent}\n${messages}`,
+            message: `${countryInfo}Fecha y hora actual: ${time}\nMensaje citado: ${messageContent}\n${messages}`,
             ...(imageBuffer && { imageQuoted: imageBuffer })
           });
           
           return gotoFlow(textFlow);
         } else {
           await state.update({
-            message: `Fecha y hora actual: ${time}\nMensaje: ${ctx.body}`,
+            message: `${countryInfo}Fecha y hora actual: ${time}\nMensaje: ${ctx.body}`,
           });
           return gotoFlow(textFlow);
         }
