@@ -19,6 +19,7 @@ export interface Config {
   sheetRegexActivate: string;
   calAppointmentActivated: string;
   shopifyActivate: string;
+  vtexActivate: string;
 }
 
 export interface IntegrationResponse {

@@ -200,6 +200,7 @@ class RegexService {
       sheetRegexActivate: process.env.ENABLE_SHEET_DB_REGEX || "false",
       calAppointmentActivated: process.env.CAL_APPOINTMENT_ACTIVATED || "false",
       shopifyActivate: process.env.SHOPIFY_ACTIVATED || "false",
+      vtexActivate: process.env.VTEX_ACTIVATED || "false"
     };
 
     this.mediaService = new MediaService(provider);
@@ -894,6 +895,11 @@ class RegexService {
       this.logger.log(`🚀 RegexService: Starting text processing for ${phone} (${name})`);
       this.logger.log(`📝 RegexService: Original text length: ${originalTextLength} chars`);
       this.logger.log(`📋 RegexService: Active integrations - FollowUp: ${this.config.followUpActivate}, Sheet: ${this.config.sheetRegexActivate}, Lobby: ${this.config.lobbyActivate}, Shopify: ${this.config.shopifyActivate}, Cal: ${this.config.calAppointmentActivated}`);
+
+      // *VTEX Integration
+      if (this.config.vtexActivate === "true") {
+        text = await this.removeVtexCommand(text, state);
+      }
 
       // Followup Integration
       if (this.config.followUpActivate === "true") {
