@@ -173,7 +173,7 @@ function extractUrlsAndText(text: string): MessagePart[] {
 
     // Determinar si es imagen o URL normal
     const url = match[0];
-    const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)(\?|#|$)/i.test(url);
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)([?#].*)?$/i.test(url);
     
     parts.push({ 
       type: isImage ? 'image' : 'url', 
@@ -409,7 +409,7 @@ export async function processUrlsAndCleanText(
     
     if (urls) {
       for (const url of urls) {
-        const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)(\?|#|$)/i.test(url);
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)([?#].*)?$/i.test(url);
 
         if (isImage) {
           // Siempre enviar imágenes independientemente de separateUrl
@@ -428,7 +428,7 @@ export async function processUrlsAndCleanText(
       } else {
         // Si separateUrl es false, solo eliminar las URLs de imágenes
         const imageUrls = urls.filter(url => 
-          /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)(\?|#|$)/i.test(url)
+          /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)([?#].*)?$/i.test(url)
         );
         for (const imageUrl of imageUrls) {
           text = text.replace(imageUrl, "");

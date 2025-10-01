@@ -524,15 +524,13 @@ class RegexService {
               this.logger.log('Processing VTEX get_product command...');
               if (params.productId) {
                 const product = await vtexAPI.obtenerProducto(params.productId);
-                // this.logger.log(`Product found: ${product.Name}`);
-                
-                
               }
               break;
             }
 
             case 'search_products': {
               this.logger.log('Processing VTEX search_products command...');
+              this.logger.log(`Search term: ${params.term}`);
               if (params.term) {
                 const products = await vtexAPI.buscarProductos(
                   params.term, 
