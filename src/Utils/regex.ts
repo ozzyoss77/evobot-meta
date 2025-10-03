@@ -532,8 +532,23 @@ class RegexService {
               this.logger.log('Processing VTEX search_products command...');
               this.logger.log(`Search term: ${params.term}`);
               if (params.term) {
+                // Detectar el género en el término de búsqueda
+                const termUpper = params.term.toUpperCase();
+                let generoID = "1"; // Por defecto hombre
+                
+                if (termUpper.includes("MUJER")) {
+                  generoID = "10";
+                  this.logger.log(`🚺 Género detectado: MUJER (código: ${generoID})`);
+                } else if (termUpper.includes("HOMBRE")) {
+                  generoID = "1";
+                  this.logger.log(`🚹 Género detectado: HOMBRE (código: ${generoID})`);
+                } else {
+                  this.logger.log(`⚠️ No se detectó género específico, usando por defecto: HOMBRE (código: ${generoID})`);
+                }
+                
                 const products = await vtexAPI.buscarProductos(
-                  params.term, 
+                  params.term,
+                  generoID, // Código de género como string
                   0, // from por defecto
                   5 // to por defecto
                 );

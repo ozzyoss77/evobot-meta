@@ -13,8 +13,48 @@ export async function sendTextFormated(phone: string, message: string, provider:
     logger.log(`📤 MessageFormatter: Sending text message to ${phone}`);
     logger.log(`💬 MessageFormatter: Message content preview: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`);
     
+    // Detectar y procesar URLs de imágenes antes de enviar el texto
+    const urlRegex = /https?:\/\/[^\s]+/gi;
+    const urls = message.match(urlRegex) || [];
+    const imageUrls: string[] = [];
+    
+    // Identificar URLs de imágenes
+    for (const url of urls) {
+      const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)(\?[^\s]*)?$/i.test(url);
+      if (isImage) {
+        imageUrls.push(url);
+        logger.log(`🖼️ MessageFormatter: Detected image URL: ${url}`);
+      }
+    }
+    
+    // Enviar imágenes detectadas
+    for (const imageUrl of imageUrls) {
+      try {
+        logger.log(`📤 MessageFormatter: Sending image to ${phone}: ${imageUrl}`);
+        await sendMediaFormated(phone, 'image', imageUrl, provider);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay entre imágenes
+      } catch (error) {
+        logger.error(`❌ MessageFormatter: Failed to send image ${imageUrl} - ${error}`);
+      }
+    }
+    
+    // Remover URLs de imágenes del mensaje de texto
+    let cleanMessage = message;
+    for (const imageUrl of imageUrls) {
+      cleanMessage = cleanMessage.replace(imageUrl, '').trim();
+    }
+    
+    // Limpiar espacios múltiples y líneas vacías
+    cleanMessage = cleanMessage.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+    
+    // Si después de remover las imágenes no queda texto, no enviar mensaje vacío
+    if (!cleanMessage) {
+      logger.log(`✅ MessageFormatter: Only images sent to ${phone}, no text content`);
+      return null;
+    }
+    
     // Usar el splitter para dividir mensajes largos
-    const messageParts = splitMessage(message);
+    const messageParts = splitMessage(cleanMessage);
     const messageIds: string[] = [];
     
     for (let i = 0; i < messageParts.length; i++) {

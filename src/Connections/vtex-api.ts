@@ -188,7 +188,7 @@ export class VtexService {
   /**
    * Busca productos por término de búsqueda
    */
-  async buscarProductos(termino: string, desde: number = 0, hasta: number = 50): Promise<any[]> {
+  async buscarProductos(termino: string, generoID: string, desde: number = 0, hasta: number = 50): Promise<any[]> {
     try {
       // Codificar el término de búsqueda para caracteres especiales
       const terminoCodificado = encodeURIComponent(termino);
@@ -199,7 +199,8 @@ export class VtexService {
           params: { 
             ft: terminoCodificado, // Usar el término codificado
             _from: desde,
-            _to: hasta
+            _to: hasta,
+            fq:`C:${generoID}` // 1 hombre y 10 mujer como string
           }
         }
       );
