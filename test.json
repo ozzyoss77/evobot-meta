@@ -1,0 +1,356 @@
+[
+    {
+        "id": 1,
+        "name": "Hombre",
+        "children": [
+            {
+                "id": 2,
+                "name": "Jeans",
+                "children": [
+                    {
+                        "id": 47,
+                        "name": "Slim Jeans"
+                    },
+                    {
+                        "id": 48,
+                        "name": "Jeans Bota Semirecta"
+                    },
+                    {
+                        "id": 71,
+                        "name": "Jeans Bota Recta"
+                    },
+                    {
+                        "id": 72,
+                        "name": "Jeans Moda"
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "name": "Polos",
+                "children": [
+                    {
+                        "id": 52,
+                        "name": "Camisas tipo polo basicas"
+                    },
+                    {
+                        "id": 53,
+                        "name": "Camisas tipo polo estampadas"
+                    }
+                ]
+            },
+            {
+                "id": 4,
+                "name": "Camisas",
+                "children": [
+                    {
+                        "id": 66,
+                        "name": "Camisas Slim fit"
+                    },
+                    {
+                        "id": 67,
+                        "name": "Camisas Regular fit"
+                    },
+                    {
+                        "id": 68,
+                        "name": "Camisas Moda"
+                    },
+                    {
+                        "id": 118,
+                        "name": "Camisas Premium"
+                    }
+                ]
+            },
+            {
+                "id": 5,
+                "name": "Pantalones",
+                "children": [
+                    {
+                        "id": 54,
+                        "name": "Pantalones Clasicos"
+                    },
+                    {
+                        "id": 55,
+                        "name": "Pantalones Bota Recta"
+                    },
+                    {
+                        "id": 73,
+                        "name": "Pantalones Slim"
+                    },
+                    {
+                        "id": 102,
+                        "name": "Pantalones Cargo"
+                    }
+                ]
+            },
+            {
+                "id": 6,
+                "name": "Camisetas",
+                "children": [
+                    {
+                        "id": 49,
+                        "name": "Camisetas basicas"
+                    },
+                    {
+                        "id": 50,
+                        "name": "Camisetas Estampadas"
+                    },
+                    {
+                        "id": 112,
+                        "name": "Camisetas oversize"
+                    }
+                ]
+            },
+            {
+                "id": 7,
+                "name": "Bermudas"
+            },
+            {
+                "id": 8,
+                "name": "Chaquetas y buzos",
+                "children": [
+                    {
+                        "id": 69,
+                        "name": "buzos"
+                    },
+                    {
+                        "id": 70,
+                        "name": "Chaquetas"
+                    }
+                ]
+            },
+            {
+                "id": 9,
+                "name": "Deportiva",
+                "children": [
+                    {
+                        "id": 63,
+                        "name": "Pantalonetas"
+                    },
+                    {
+                        "id": 64,
+                        "name": "Joggers"
+                    },
+                    {
+                        "id": 65,
+                        "name": "Camisetas deportivas"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": 10,
+        "name": "Mujer",
+        "children": [
+            {
+                "id": 11,
+                "name": "Jeans",
+                "children": [
+                    {
+                        "id": 56,
+                        "name": "Jeans Basicos"
+                    },
+                    {
+                        "id": 57,
+                        "name": "Jeans Moda"
+                    },
+                    {
+                        "id": 88,
+                        "name": "Skinny jeans"
+                    },
+                    {
+                        "id": 89,
+                        "name": "Jeans bota recta"
+                    },
+                    {
+                        "id": 90,
+                        "name": "Jeans pretina anatomica"
+                    },
+                    {
+                        "id": 91,
+                        "name": "Jeans de moda"
+                    }
+                ]
+            },
+            {
+                "id": 12,
+                "name": "Blusas",
+                "children": [
+                    {
+                        "id": 58,
+                        "name": "Blusa Casual"
+                    },
+                    {
+                        "id": 59,
+                        "name": "Blusa Juvenil"
+                    },
+                    {
+                        "id": 60,
+                        "name": "Blusas Pluss"
+                    },
+                    {
+                        "id": 74,
+                        "name": "Blusas manga corta"
+                    },
+                    {
+                        "id": 75,
+                        "name": "Blusas manga larga"
+                    },
+                    {
+                        "id": 76,
+                        "name": "Blusas de tiras"
+                    },
+                    {
+                        "id": 77,
+                        "name": "Blusas Manga sisa"
+                    },
+                    {
+                        "id": 78,
+                        "name": "Blusas manga 3-4"
+                    },
+                    {
+                        "id": 103,
+                        "name": "Blusas basicas"
+                    },
+                    {
+                        "id": 104,
+                        "name": "Blusas de moda"
+                    }
+                ]
+            },
+            {
+                "id": 13,
+                "name": "Pantalones",
+                "children": [
+                    {
+                        "id": 107,
+                        "name": "Pantalones cargo"
+                    },
+                    {
+                        "id": 108,
+                        "name": "Pantalones de moda"
+                    },
+                    {
+                        "id": 109,
+                        "name": "Pantalones Dril"
+                    }
+                ]
+            },
+            {
+                "id": 14,
+                "name": "Camisetas",
+                "children": [
+                    {
+                        "id": 79,
+                        "name": "Camisetas Basicas"
+                    },
+                    {
+                        "id": 80,
+                        "name": "Camisetas Estampadas"
+                    },
+                    {
+                        "id": 110,
+                        "name": "Camisetas oversize cortas"
+                    },
+                    {
+                        "id": 111,
+                        "name": "Camisetas oversize"
+                    }
+                ]
+            },
+            {
+                "id": 15,
+                "name": "Faldas"
+            },
+            {
+                "id": 16,
+                "name": "Vestidos y Conjuntos",
+                "children": [
+                    {
+                        "id": 96,
+                        "name": "Vestidos"
+                    },
+                    {
+                        "id": 97,
+                        "name": "Conjuntos"
+                    }
+                ]
+            },
+            {
+                "id": 17,
+                "name": "Chaquetas Buzos y Chalecos",
+                "children": [
+                    {
+                        "id": 81,
+                        "name": "Buzos"
+                    },
+                    {
+                        "id": 82,
+                        "name": "Chaquetas"
+                    }
+                ]
+            },
+            {
+                "id": 18,
+                "name": "Deportiva",
+                "children": [
+                    {
+                        "id": 83,
+                        "name": "Leggins"
+                    },
+                    {
+                        "id": 84,
+                        "name": "Joggers"
+                    },
+                    {
+                        "id": 85,
+                        "name": "Licras"
+                    },
+                    {
+                        "id": 86,
+                        "name": "Ciclistas"
+                    },
+                    {
+                        "id": 87,
+                        "name": "Camisetas deportivas"
+                    }
+                ]
+            },
+            {
+                "id": 40,
+                "name": "Shorts, Bermudas y Capris",
+                "children": [
+                    {
+                        "id": 93,
+                        "name": "Shorts"
+                    },
+                    {
+                        "id": 94,
+                        "name": "Bermudas"
+                    },
+                    {
+                        "id": 95,
+                        "name": "Capris"
+                    },
+                    {
+                        "id": 113,
+                        "name": "faldas"
+                    }
+                ]
+            },
+            {
+                "id": 42,
+                "name": "Blusas Clasicas"
+            },
+            {
+                "id": 62,
+                "name": "Polos"
+            },
+            {
+                "id": 106,
+                "name": "Camisas"
+            }
+        ]
+    }
+]

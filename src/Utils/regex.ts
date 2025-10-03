@@ -531,24 +531,35 @@ class RegexService {
             case 'search_products': {
               this.logger.log('Processing VTEX search_products command...');
               this.logger.log(`Search term: ${params.term}`);
-              if (params.term) {
-                // Detectar el género en el término de búsqueda
-                const termUpper = params.term.toUpperCase();
-                let generoID = "1"; // Por defecto hombre
+              if (params.term && params.ids) {
+                // Validar y corregir la estructura de ids para que sea /1/2/47/
+                let idsValidated = params.ids;
                 
-                if (termUpper.includes("MUJER")) {
-                  generoID = "10";
-                  this.logger.log(`🚺 Género detectado: MUJER (código: ${generoID})`);
-                } else if (termUpper.includes("HOMBRE")) {
-                  generoID = "1";
-                  this.logger.log(`🚹 Género detectado: HOMBRE (código: ${generoID})`);
-                } else {
-                  this.logger.log(`⚠️ No se detectó género específico, usando por defecto: HOMBRE (código: ${generoID})`);
+                // Si no empieza con /, agregar
+                if (!idsValidated.startsWith('/')) {
+                  idsValidated = '/' + idsValidated;
+                  this.logger.log(`⚠️ Corrigiendo ids: agregando / al inicio`);
                 }
+                
+                // Si no termina con /, agregar
+                if (!idsValidated.endsWith('/')) {
+                  idsValidated = idsValidated + '/';
+                  this.logger.log(`⚠️ Corrigiendo ids: agregando / al final`);
+                }
+                
+                // Validar que tenga el formato correcto /número/número/ o /número/número/número/
+                const idsPattern = /^\/\d+(\/\d+)*\/$/;
+                if (!idsPattern.test(idsValidated)) {
+                  this.logger.error(`❌ Error: ids no tiene el formato correcto. Recibido: ${params.ids}, esperado: /1/2/47/`);
+                  text = text.replace(match[0], 'Error: El formato de ids es incorrecto. Debe ser /1/2/47/');
+                  break;
+                }
+                
+                this.logger.log(`✅ IDs validados correctamente: ${idsValidated}`);
                 
                 const products = await vtexAPI.buscarProductos(
                   params.term,
-                  generoID, // Código de género como string
+                  idsValidated,
                   0, // from por defecto
                   5 // to por defecto
                 );
@@ -563,6 +574,9 @@ class RegexService {
                 
                 // Reemplazar el comando en el texto con la respuesta de la IA
                 text = textResponse;
+              } else {
+                this.logger.error('❌ Faltan parámetros requeridos: term o ids');
+                text = text.replace(match[0], 'Error: Se requieren term e ids para buscar productos.');
               }
               break;
             }
