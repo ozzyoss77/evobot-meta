@@ -7,6 +7,97 @@ const logger = new Logger();
 const whatsapp_messages_db = process.env.APPWRITE_WHATSAPP_MESSAGES_DB;
 const whatsapp_messages_collection = process.env.APPWRITE_WHATSAPP_MESSAGES_COLLECTION;
 
+// =============================================================================
+// IMAGE URL DETECTION
+// =============================================================================
+
+/**
+ * Detecta si una URL es una imagen mediante múltiples patrones
+ * @param url - La URL a validar
+ * @returns true si la URL es una imagen
+ */
+function isImageUrl(url: string): boolean {
+  // Patrón 1: Extensión de imagen al final de la URL (con o sin parámetros query)
+  // Ejemplo: image.jpg, image.png?v=123, image.jpeg#anchor
+  const extensionPattern = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?|ico|heic|heif)([?#].*)?$/i;
+  if (extensionPattern.test(url)) {
+    return true;
+  }
+  
+  // Patrón 2: Extensión de imagen en el path seguida de parámetros
+  // Ejemplo: /path/image.jpg?v=123&size=large
+  const extensionInPathPattern = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?|ico|heic|heif)\?/i;
+  if (extensionInPathPattern.test(url)) {
+    return true;
+  }
+  
+  // Patrón 3: Dominios conocidos de CDN de imágenes
+  const imageCdnPatterns = [
+    /vteximg\.com/i,           // VTEX CDN
+    /cloudinary\.com/i,        // Cloudinary
+    /imgix\.net/i,             // Imgix
+    /amazonaws\.com.*\.(jpg|jpeg|png|gif|webp)/i, // AWS S3 con extensión
+    /cloudfront\.net.*\.(jpg|jpeg|png|gif|webp)/i, // CloudFront con extensión
+    /shopify\.com.*\/products\//i, // Shopify product images
+    /shopifycdn\.com/i,        // Shopify CDN
+    /wixmp\.com/i,             // Wix media platform
+    /squarespace\.com.*\/content\//i, // Squarespace
+    /imgur\.com/i,             // Imgur
+    /unsplash\.com/i,          // Unsplash
+    /pexels\.com/i,            // Pexels
+    /googleusercontent\.com/i, // Google user content
+    /fbcdn\.net/i,             // Facebook CDN
+    /cdninstagram\.com/i,      // Instagram CDN
+  ];
+  
+  for (const pattern of imageCdnPatterns) {
+    if (pattern.test(url)) {
+      return true;
+    }
+  }
+  
+  // Patrón 4: Paths comunes de imágenes en URLs
+  const imagePathPatterns = [
+    /\/images?\//i,            // /image/ o /images/
+    /\/img\//i,                // /img/
+    /\/media\//i,              // /media/
+    /\/assets\//i,             // /assets/
+    /\/uploads?\//i,           // /upload/ o /uploads/
+    /\/gallery\//i,            // /gallery/
+    /\/photos?\//i,            // /photo/ o /photos/
+    /\/pictures?\//i,          // /picture/ o /pictures/
+    /\/thumbs?\//i,            // /thumb/ o /thumbs/
+    /\/arquivos\/ids/i,        // VTEX specific pattern
+  ];
+  
+  for (const pattern of imagePathPatterns) {
+    if (pattern.test(url)) {
+      // Validación adicional: verificar que también tenga extensión en algún lugar
+      if (extensionInPathPattern.test(url) || extensionPattern.test(url)) {
+        return true;
+      }
+    }
+  }
+  
+  // Patrón 5: Parámetros query que sugieren imagen
+  const imageQueryParams = [
+    /[?&](image|img|picture|photo|thumbnail|thumb)=/i,
+    /[?&]format=(jpg|jpeg|png|gif|webp|svg)/i,
+    /[?&]type=image/i,
+  ];
+  
+  for (const pattern of imageQueryParams) {
+    if (pattern.test(url)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// =============================================================================
+// MESSAGE FORMATTING AND SENDING
+// =============================================================================
 
 export async function sendTextFormated(phone: string, message: string, provider: any) {
   try {
@@ -18,9 +109,9 @@ export async function sendTextFormated(phone: string, message: string, provider:
     const urls = message.match(urlRegex) || [];
     const imageUrls: string[] = [];
     
-    // Identificar URLs de imágenes
+    // Identificar URLs de imágenes con regex mejorado
     for (const url of urls) {
-      const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)(\?[^\s]*)?$/i.test(url);
+      const isImage = isImageUrl(url);
       if (isImage) {
         imageUrls.push(url);
         logger.log(`🖼️ MessageFormatter: Detected image URL: ${url}`);
@@ -211,9 +302,9 @@ function extractUrlsAndText(text: string): MessagePart[] {
       }
     }
 
-    // Determinar si es imagen o URL normal
+    // Determinar si es imagen o URL normal usando la función mejorada
     const url = match[0];
-    const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)([?#].*)?$/i.test(url);
+    const isImage = isImageUrl(url);
     
     parts.push({ 
       type: isImage ? 'image' : 'url', 
@@ -449,7 +540,7 @@ export async function processUrlsAndCleanText(
     
     if (urls) {
       for (const url of urls) {
-        const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)([?#].*)?$/i.test(url);
+        const isImage = isImageUrl(url);
 
         if (isImage) {
           // Siempre enviar imágenes independientemente de separateUrl
@@ -467,9 +558,7 @@ export async function processUrlsAndCleanText(
         text = text.replace(urlRegex, "");
       } else {
         // Si separateUrl es false, solo eliminar las URLs de imágenes
-        const imageUrls = urls.filter(url => 
-          /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)([?#].*)?$/i.test(url)
-        );
+        const imageUrls = urls.filter(url => isImageUrl(url));
         for (const imageUrl of imageUrls) {
           text = text.replace(imageUrl, "");
         }
