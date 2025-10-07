@@ -187,22 +187,39 @@ export class VtexService {
 
   /**
    * Busca productos por término de búsqueda
+   * @param termino - Término de búsqueda (ej: "jean")
+   * @param ids - IDs de categorías en formato string (ej: "/1/2/47/")
+   * @param desde - Índice inicial de paginación
+   * @param hasta - Índice final de paginación
+   * @param color - Color opcional para filtrar (ej: "azul", "rojo")
    */
-  async buscarProductos(termino: string, ids: string, desde: number = 0, hasta: number = 14): Promise<any[]> {
+  async buscarProductos(
+    termino: string, 
+    ids: string, 
+    desde: number = 0, 
+    hasta: number = 14,
+    color?: string
+  ): Promise<any[]> {
     try {
       // Codificar el término de búsqueda para caracteres especiales
       const terminoCodificado = encodeURIComponent(termino);
       
+      // Construir parámetros
+      const params: any = { 
+        ft: terminoCodificado,
+        _from: desde,
+        _to: hasta,
+        fq: `C:${ids}`
+      };
+      
+      // Agregar segundo fq de color si existe
+      if (color) {
+        params.fq = [`C:${ids}`, color];
+      }
+      
       const response = await this.client.get(
         `/api/catalog_system/pub/products/search`,
-        {
-          params: { 
-            ft: terminoCodificado, // Usar el término codificado
-            _from: desde,
-            _to: hasta,
-            fq:`C:${ids}` // 1 hombre y 10 mujer como string
-          }
-        }
+        { params }
       );
       return response.data;
     } catch (error) {

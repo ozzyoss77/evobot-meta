@@ -530,7 +530,7 @@ class RegexService {
 
             case 'search_products': {
               this.logger.log('Processing VTEX search_products command...');
-              this.logger.log(`Search term: ${params.term}`);
+              this.logger.log(`Search term: ${params.term}, Color filter: ${params.color || 'none'}`);
               if (params.term && params.ids) {
                 // Validar y corregir la estructura de ids para que sea /1/2/47/
                 let idsValidated = params.ids;
@@ -557,11 +557,13 @@ class RegexService {
                 
                 this.logger.log(`✅ IDs validados correctamente: ${idsValidated}`);
                 
+                // Llamar a buscarProductos con o sin color
                 const products = await vtexAPI.buscarProductos(
                   params.term,
                   idsValidated,
                   0, // from por defecto
-                  5 // to por defecto
+                  5, // to por defecto
+                  params.color // pasar el color si existe, sino undefined
                 );
                 
                 // Limpiar los productos para reducir el tamaño de data
