@@ -134,7 +134,7 @@ export async function recuMassive(bot, req, res) {
     const messageSended = await bot.provider.sendTemplate(
       telefono,
       plantilla,
-      'es_Mx', // Asumiendo que el idioma es español
+      'es_Co', // Asumiendo que el idioma es español
       [
         {
           type: "header",
