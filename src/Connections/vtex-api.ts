@@ -198,7 +198,7 @@ export class VtexService {
     ids: string, 
     desde: number = 0, 
     hasta: number = 14,
-    color?: string
+    // color?: string
   ): Promise<any[]> {
     try {
       // Codificar el término de búsqueda para caracteres especiales
@@ -209,13 +209,13 @@ export class VtexService {
         ft: terminoCodificado,
         _from: desde,
         _to: hasta,
-        fq: `C:${ids}`
+        // fq: `C:${ids}`
       };
       
-      // Agregar segundo fq de color si existe
-      if (color) {
-        params.fq = [`C:${ids}`, color];
-      }
+      // // Agregar segundo fq de color si existe
+      // if (color) {
+      //   params.fq = [`C:${ids}`, color];
+      // }
       
       const response = await this.client.get(
         `/api/catalog_system/pub/products/search`,

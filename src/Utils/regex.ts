@@ -520,13 +520,14 @@ class RegexService {
           const vtexAPI = vtexService['vtexAPI']; // Acceder a la instancia de VtexAPI
 
           switch (command.toLowerCase()) {
-            case 'get_product': {
-              this.logger.log('Processing VTEX get_product command...');
-              if (params.productId) {
-                const product = await vtexAPI.obtenerProducto(params.productId);
-              }
-              break;
-            }
+            // *Get Product
+            // case 'get_product': {
+            //   this.logger.log('Processing VTEX get_product command...');
+            //   if (params.productId) {
+            //     const product = await vtexAPI.obtenerProducto(params.productId);
+            //   }
+            //   break;
+            // }
 
             case 'search_products': {
               this.logger.log('Processing VTEX search_products command...');
@@ -563,7 +564,6 @@ class RegexService {
                   idsValidated,
                   0, // from por defecto
                   5, // to por defecto
-                  params.color // pasar el color si existe, sino undefined
                 );
                 
                 // Limpiar los productos para reducir el tamaño de data
