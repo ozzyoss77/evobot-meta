@@ -32,6 +32,10 @@ type Product = {
     images: Array<{
       imageUrl: string;
     }>;
+    referenceId?: Array<{
+      Key?: string;
+      Value?: string;
+    }>;
   }>;
 };
 
@@ -48,6 +52,114 @@ type CleanedProduct = {
     itemId: string;
     nameComplete: string;
   }>;
+};
+
+type ColorFilterInfo = {
+  hex?: string;
+  families: string[];
+  rawText?: string;
+  label?: string;
+};
+
+type CleanedProductsResult = {
+  products: CleanedProduct[];
+  message?: string;
+};
+
+const COLOR_PALETTE: Record<string, string> = {
+  red: '#d32f2f',
+  orange: '#f57c00',
+  yellow: '#fbc02d',
+  green: '#388e3c',
+  cyan: '#0097a7',
+  blue: '#1976d2',
+  purple: '#7b1fa2',
+  pink: '#c2185b',
+  brown: '#6d4c41',
+  black: '#212121',
+  gray: '#757575',
+  white: '#fafafa'
+};
+
+const COLOR_KEYWORDS_TO_FAMILY: Record<string, string> = {
+  azul: 'blue',
+  celeste: 'blue',
+  cyan: 'cyan',
+  turquesa: 'cyan',
+  teal: 'cyan',
+  navy: 'blue',
+  marino: 'blue',
+  indigo: 'blue',
+  azulado: 'blue',
+  cobalto: 'blue',
+  denim: 'blue',
+  sky: 'blue',
+  royal: 'blue',
+  blue: 'blue',
+  aqua: 'cyan',
+  verdemar: 'cyan',
+  verde: 'green',
+  esmeralda: 'green',
+  oliva: 'green',
+  olive: 'green',
+  menta: 'green',
+  mint: 'green',
+  lima: 'green',
+  amarillo: 'yellow',
+  mostaza: 'yellow',
+  dorado: 'yellow',
+  oro: 'yellow',
+  gold: 'yellow',
+  naranja: 'orange',
+  coral: 'orange',
+  salmon: 'orange',
+  durazno: 'orange',
+  peach: 'orange',
+  rojo: 'red',
+  carmin: 'red',
+  granate: 'red',
+  vino: 'red',
+  burdeo: 'red',
+  burdeos: 'red',
+  burgundy: 'red',
+  cherry: 'red',
+  rubi: 'red',
+  tinto: 'red',
+  fucsia: 'pink',
+  magenta: 'pink',
+  rosa: 'pink',
+  pink: 'pink',
+  'palo de rosa': 'pink',
+  nude: 'pink',
+  lila: 'purple',
+  lavanda: 'purple',
+  violeta: 'purple',
+  morado: 'purple',
+  purpura: 'purple',
+  purple: 'purple',
+  cafe: 'brown',
+  marron: 'brown',
+  camel: 'brown',
+  beige: 'brown',
+  arena: 'brown',
+  chocolate: 'brown',
+  tierra: 'brown',
+  khaki: 'brown',
+  negro: 'black',
+  black: 'black',
+  grafito: 'gray',
+  plomo: 'gray',
+  gris: 'gray',
+  plata: 'gray',
+  silver: 'gray',
+  acero: 'gray',
+  blanco: 'white',
+  white: 'white',
+  hueso: 'white',
+  ivory: 'white',
+  marfil: 'white',
+  perla: 'white',
+  crema: 'white'
 };
 
 const host = process.env.BOT_HOST || "http://localhost:3000";
@@ -567,9 +679,12 @@ class RegexService {
                 );
                 
                 // Limpiar los productos para reducir el tamaño de data
-                const cleanedProducts = this.limpiarProductos(products);
-                this.logger.log(`🛍️ Found and cleaned ${cleanedProducts.length} products`);
-                // this.logger.log(`🛍️ Products found: ${cleanedProducts.map(product => product.productName).join(', ')}`);
+                const cleanedProducts = this.limpiarProductos(products, params.color);
+                this.logger.log(`🛍️ Found and cleaned ${cleanedProducts.products.length} products`);
+                if (cleanedProducts.message) {
+                  this.logger.log(`ℹ️ Color availability note: ${cleanedProducts.message}`);
+                }
+                // this.logger.log(`🛍️ Products found: ${cleanedProducts.products.map(product => product.productName).join(', ')}`);
                 this.logger.log(`🛍️ Products found: ${JSON.stringify(cleanedProducts)}`);
                 // Generar respuesta con IA como en ShopifyService
                 const { textResponse } = await this.generateAIResponse(`shipping_costs:${JSON.stringify(cleanedProducts)}`, state);
@@ -624,51 +739,351 @@ class RegexService {
     }
   }
 
-  private limpiarProductos(productos: Product[]): CleanedProduct[] {
-    return productos.map(producto => {
-      const tallas = producto.items.map(item => item.Talla?.[0] || '').filter(Boolean);
-      const precios = producto.items.map(item => item.sellers[0]?.commertialOffer?.Price || 0);
-      const disponibilidad = producto.items.map(item => item.sellers[0]?.commertialOffer?.IsAvailable ?? false);
-      
-      // Filtrar solo los elementos donde disponibilidad es true
-      const indicesDisponibles = disponibilidad
-        .map((disp, index) => disp ? index : -1)
-        .filter(index => index !== -1);
-      
-      const tallasDisponibles = indicesDisponibles.map(i => tallas[i]);
-      const preciosVentaDisponibles = indicesDisponibles.map(i => precios[i]);
-      const disponibilidadDisponibles = indicesDisponibles.map(i => disponibilidad[i]);
-      
-      // Optimización: Solo tomar las primeras 2 imágenes en lugar de procesar todas
-      const imagenes: string[] = [];
-      for (const item of producto.items) {
-        if (imagenes.length >= 2) break;
-        if (item.images) {
-          for (const img of item.images) {
-            if (imagenes.length >= 2) break;
-            imagenes.push(img.imageUrl);
+  private limpiarProductos(productos: Product[], colorFilter?: string): CleanedProductsResult {
+    if (!Array.isArray(productos)) {
+      return { products: [] };
+    }
+
+    const filterInfo = this.parseColorFilter(colorFilter);
+    const matchingProducts: CleanedProduct[] = [];
+    const alternativeProducts: CleanedProduct[] = [];
+
+    for (const producto of productos) {
+      if (!producto || !Array.isArray(producto.items) || producto.items.length === 0) {
+        continue;
+      }
+
+      const colorMetadata = this.getProductColorMetadata(producto);
+      const matchesColor = filterInfo ? this.productMatchesColor(colorMetadata, filterInfo) : true;
+
+      const availableItems = producto.items
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => {
+          if (!item) {
+            return false;
           }
+
+          const seller = item.sellers?.[0];
+          const isAvailable = seller?.commertialOffer?.IsAvailable ?? false;
+          if (!isAvailable) {
+            return false;
+          }
+
+          const hasUnavailableReference = (item.referenceId || []).some(ref => {
+            const value = ref?.Value?.trim();
+            return !!value && value.endsWith('(*)');
+          });
+
+          return !hasUnavailableReference;
+        });
+
+      if (!availableItems.length) {
+        continue;
+      }
+
+      const tallasDisponibles = availableItems
+        .map(({ item }) => item?.Talla?.find(talla => Boolean(talla)) || '')
+        .filter(Boolean);
+
+      const preciosVentaDisponibles = availableItems
+        .map(({ item }) => item?.sellers?.[0]?.commertialOffer?.Price || 0);
+
+      const disponibilidadDisponibles = availableItems
+        .map(({ item }) => item?.sellers?.[0]?.commertialOffer?.IsAvailable ?? false);
+
+      const imageUrls: string[] = [];
+      for (const { item } of availableItems) {
+        if (!item?.images) {
+          continue;
+        }
+
+        for (const img of item.images) {
+          if (!img?.imageUrl) {
+            continue;
+          }
+
+          if (!imageUrls.includes(img.imageUrl)) {
+            imageUrls.push(img.imageUrl);
+          }
+
+          if (imageUrls.length >= 2) {
+            break;
+          }
+        }
+
+        if (imageUrls.length >= 2) {
+          break;
         }
       }
 
-      // Extraer items disponibles únicamente
-      const itemsDisponibles = indicesDisponibles.map(i => ({
-        itemId: producto.items[i]?.itemId || '',
-        nameComplete: producto.items[i]?.nameComplete || ''
+      const items = availableItems.map(({ item }) => ({
+        itemId: item?.itemId || '',
+        nameComplete: item?.nameComplete || ''
       }));
 
-      return {
+      const cleanedProduct: CleanedProduct = {
         productId: producto.productId,
         productName: producto.productName,
-        composicion: producto.Composición || [],
-        color: producto.Color || [],
-        tallasDisponibles: tallasDisponibles,
+        composicion: Array.isArray(producto.Composición) ? producto.Composición : [],
+        color: Array.isArray(producto.Color) ? producto.Color : [],
+        tallasDisponibles,
         preciosVenta: preciosVentaDisponibles,
         disponibilidad: disponibilidadDisponibles,
-        imageUrls: imagenes,
-        items: itemsDisponibles,
+        imageUrls,
+        items
       };
+
+      if (matchesColor) {
+        matchingProducts.push(cleanedProduct);
+      } else {
+        alternativeProducts.push(cleanedProduct);
+      }
+    }
+
+    const orderedProducts = [...matchingProducts, ...alternativeProducts];
+    const result: CleanedProductsResult = {
+      products: orderedProducts
+    };
+
+    if (filterInfo && !matchingProducts.length && alternativeProducts.length > 0) {
+      const colorLabel = this.buildColorLabel(colorFilter, filterInfo);
+      const labelText = colorLabel ? colorLabel.toLowerCase() : 'solicitado';
+      result.message = `no hay disponibilidad en el color ${labelText} pero tengo otras opciones`;
+    }
+
+    return result;
+  }
+
+  private parseColorFilter(colorParam?: string): ColorFilterInfo | null {
+    if (!colorParam || typeof colorParam !== 'string') {
+      return null;
+    }
+
+    const trimmed = colorParam.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+  const withoutPrefix = trimmed.replace(/^color[_\s-]*/i, '');
+  const labelCandidate = withoutPrefix.replace(/_/g, ' ').trim();
+    const families = new Set<string>();
+
+    const hexMatch = withoutPrefix.match(/#([0-9a-f]{6})/i);
+    let hex: string | undefined;
+    if (hexMatch) {
+      hex = `#${hexMatch[1].toLowerCase()}`;
+      const rgb = this.hexToRgb(hex);
+      if (rgb) {
+        this.closestColorFamilies(rgb).forEach(family => families.add(family));
+      }
+    }
+
+    const textWithoutHex = withoutPrefix.replace(/#([0-9a-f]{6})/ig, '');
+    const normalizedText = this.normalizeColorText(textWithoutHex);
+    if (normalizedText) {
+      Object.entries(COLOR_KEYWORDS_TO_FAMILY).forEach(([keyword, family]) => {
+        if (normalizedText.includes(keyword)) {
+          families.add(family);
+        }
+      });
+    }
+
+    if (!families.size && !normalizedText) {
+      return null;
+    }
+
+    const labelParts: string[] = [];
+    if (labelCandidate) {
+      labelParts.push(labelCandidate);
+    }
+    if (hex) {
+      const lowerLabel = labelCandidate.toLowerCase();
+      if (!lowerLabel.includes(hex.toLowerCase())) {
+        labelParts.push(hex);
+      }
+    }
+
+    return {
+      hex,
+      families: Array.from(families),
+      rawText: normalizedText || undefined,
+      label: labelParts.join(' ').trim() || undefined
+    };
+  }
+
+  private getProductColorMetadata(producto: Product): { families: string[]; normalizedTexts: string[] } {
+    const rawValues: string[] = [];
+
+    if (Array.isArray(producto.Color)) {
+      rawValues.push(...producto.Color);
+    }
+
+    if (producto.productName) {
+      rawValues.push(producto.productName);
+    }
+
+    for (const item of producto.items) {
+      if (item?.nameComplete) {
+        rawValues.push(item.nameComplete);
+      }
+    }
+
+    const families = new Set<string>();
+    const normalizedTexts: string[] = [];
+
+    for (const value of rawValues) {
+      if (typeof value !== 'string') {
+        continue;
+      }
+
+      const trimmed = value.trim();
+      if (!trimmed) {
+        continue;
+      }
+
+      const normalizedValue = this.normalizeColorText(trimmed);
+      if (normalizedValue) {
+        normalizedTexts.push(normalizedValue);
+      }
+      this.getColorFamiliesFromString(trimmed).forEach(family => families.add(family));
+    }
+
+    return {
+      families: Array.from(families),
+      normalizedTexts
+    };
+  }
+
+  private buildColorLabel(colorParam?: string, filterInfo?: ColorFilterInfo | null): string {
+    if (filterInfo?.label) {
+      return filterInfo.label;
+    }
+
+    if (!colorParam || typeof colorParam !== 'string') {
+      return '';
+    }
+
+    const trimmed = colorParam.trim();
+    if (!trimmed) {
+      return '';
+    }
+
+    const withoutPrefix = trimmed.replace(/^color[_\s-]*/i, '');
+    const cleaned = withoutPrefix.replace(/_/g, ' ').trim();
+    if (cleaned) {
+      return cleaned;
+    }
+
+    return trimmed;
+  }
+
+  private productMatchesColor(
+    metadata: { families: string[]; normalizedTexts: string[] },
+    filter: ColorFilterInfo
+  ): boolean {
+    if (!filter) {
+      return true;
+    }
+
+    if (filter.families.length > 0) {
+      const matchByFamily = metadata.families.some(family => filter.families.includes(family));
+      if (matchByFamily) {
+        return true;
+      }
+    }
+
+    if (filter.rawText) {
+      const rawText = filter.rawText;
+      return metadata.normalizedTexts.some(text => text.includes(rawText));
+    }
+
+    return false;
+  }
+
+  private normalizeColorText(value: string): string {
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9#\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private getColorFamiliesFromString(value: string): string[] {
+    const families = new Set<string>();
+    const normalized = this.normalizeColorText(value);
+
+    if (!normalized) {
+      return [];
+    }
+
+    Object.entries(COLOR_KEYWORDS_TO_FAMILY).forEach(([keyword, family]) => {
+      if (normalized.includes(keyword)) {
+        families.add(family);
+      }
     });
+
+    const hexMatches = value.match(/#([0-9a-f]{6})/ig) || [];
+    for (const hex of hexMatches) {
+      const rgb = this.hexToRgb(hex);
+      if (rgb) {
+        this.closestColorFamilies(rgb).forEach(family => families.add(family));
+      }
+    }
+
+    return Array.from(families);
+  }
+
+  private closestColorFamilies(rgb: { r: number; g: number; b: number }): string[] {
+    const distances = Object.entries(COLOR_PALETTE)
+      .map(([family, hex]) => {
+        const paletteRgb = this.hexToRgb(hex);
+        if (!paletteRgb) {
+          return { family, distance: Number.POSITIVE_INFINITY };
+        }
+
+        return { family, distance: this.colorDistance(rgb, paletteRgb) };
+      })
+      .sort((a, b) => a.distance - b.distance);
+
+    if (!distances.length) {
+      return [];
+    }
+
+    const result: string[] = [distances[0].family];
+    const baseDistance = distances[0].distance;
+
+    for (let i = 1; i < distances.length; i++) {
+      if (distances[i].distance - baseDistance <= 80) {
+        result.push(distances[i].family);
+      } else {
+        break;
+      }
+    }
+
+    return result;
+  }
+
+  private hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+    const match = hex.trim().match(/^#?([0-9a-f]{6})$/i);
+    if (!match) {
+      return null;
+    }
+
+    const value = match[1];
+    const r = parseInt(value.substring(0, 2), 16);
+    const g = parseInt(value.substring(2, 4), 16);
+    const b = parseInt(value.substring(4, 6), 16);
+
+    return { r, g, b };
+  }
+
+  private colorDistance(a: { r: number; g: number; b: number }, b: { r: number; g: number; b: number }): number {
+    const dr = a.r - b.r;
+    const dg = a.g - b.g;
+    const db = a.b - b.b;
+    return Math.sqrt(dr * dr + dg * dg + db * db);
   }
 
   private async generateAIResponse(data: any, state: Map<string, any>) {
