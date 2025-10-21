@@ -677,9 +677,18 @@ class RegexService {
                   0, // from por defecto
                   5, // to por defecto
                 );
+                const expectedGender = this.getGenderFromIds(idsValidated);
+                if (expectedGender) {
+                  this.logger.log(`🧍‍♂️ Filtro de género detectado: ${expectedGender}`);
+                }
                 
                 // Limpiar los productos para reducir el tamaño de data
-                const cleanedProducts = this.limpiarProductos(products, params.color);
+                const cleanedProducts = this.limpiarProductos(
+                  products,
+                  params.color,
+                  params.fullTerm,
+                  expectedGender
+                );
                 this.logger.log(`🛍️ Found and cleaned ${cleanedProducts.products.length} products`);
                 if (cleanedProducts.message) {
                   this.logger.log(`ℹ️ Color availability note: ${cleanedProducts.message}`);
@@ -739,14 +748,22 @@ class RegexService {
     }
   }
 
-  private limpiarProductos(productos: Product[], colorFilter?: string): CleanedProductsResult {
+  private limpiarProductos(
+    productos: Product[],
+    colorFilter?: string,
+    fullTerm?: string,
+    expectedGender?: 'H' | 'M' | null
+  ): CleanedProductsResult {
     if (!Array.isArray(productos)) {
       return { products: [] };
     }
 
     const filterInfo = this.parseColorFilter(colorFilter);
-    const matchingProducts: CleanedProduct[] = [];
-    const alternativeProducts: CleanedProduct[] = [];
+    const normalizedFullTerm = this.normalizeSearchText(fullTerm);
+    const colorAndTermMatches: CleanedProduct[] = [];
+    const colorOnlyMatches: CleanedProduct[] = [];
+    const termOnlyMatches: CleanedProduct[] = [];
+    const fallbackProducts: CleanedProduct[] = [];
 
     for (const producto of productos) {
       if (!producto || !Array.isArray(producto.items) || producto.items.length === 0) {
@@ -756,43 +773,62 @@ class RegexService {
       const colorMetadata = this.getProductColorMetadata(producto);
       const matchesColor = filterInfo ? this.productMatchesColor(colorMetadata, filterInfo) : true;
 
-      const availableItems = producto.items
-        .map((item, index) => ({ item, index }))
-        .filter(({ item }) => {
-          if (!item) {
-            return false;
-          }
+      const availableItems: Array<{ item: Product['items'][number]; matchesTerm: boolean }> = [];
 
-          const seller = item.sellers?.[0];
-          const isAvailable = seller?.commertialOffer?.IsAvailable ?? false;
-          if (!isAvailable) {
-            return false;
-          }
+      for (const item of producto.items) {
+        if (!item) {
+          continue;
+        }
 
-          const hasUnavailableReference = (item.referenceId || []).some(ref => {
-            const value = ref?.Value?.trim();
-            return !!value && value.endsWith('(*)');
-          });
+        const seller = item.sellers?.[0];
+        const isAvailable = seller?.commertialOffer?.IsAvailable ?? false;
+        if (!isAvailable) {
+          continue;
+        }
 
-          return !hasUnavailableReference;
+        const hasUnavailableReference = (item.referenceId || []).some(ref => {
+          const value = ref?.Value?.trim();
+          return !!value && value.endsWith('(*)');
         });
+
+        if (hasUnavailableReference) {
+          continue;
+        }
+
+        if (expectedGender) {
+          const matchesGender = this.itemMatchesGender(item.referenceId || [], expectedGender);
+          if (!matchesGender) {
+            continue;
+          }
+        }
+
+        const matchesTerm = normalizedFullTerm
+          ? this.normalizeSearchText(item.nameComplete || '').includes(normalizedFullTerm)
+          : false;
+
+        availableItems.push({ item, matchesTerm });
+      }
 
       if (!availableItems.length) {
         continue;
       }
 
-      const tallasDisponibles = availableItems
+      const termMatchedItems = availableItems.filter(entry => entry.matchesTerm);
+      const itemsForProduct = termMatchedItems.length ? termMatchedItems : availableItems;
+      const matchesTerm = termMatchedItems.length > 0;
+
+      const tallasDisponibles = itemsForProduct
         .map(({ item }) => item?.Talla?.find(talla => Boolean(talla)) || '')
         .filter(Boolean);
 
-      const preciosVentaDisponibles = availableItems
+      const preciosVentaDisponibles = itemsForProduct
         .map(({ item }) => item?.sellers?.[0]?.commertialOffer?.Price || 0);
 
-      const disponibilidadDisponibles = availableItems
+      const disponibilidadDisponibles = itemsForProduct
         .map(({ item }) => item?.sellers?.[0]?.commertialOffer?.IsAvailable ?? false);
 
       const imageUrls: string[] = [];
-      for (const { item } of availableItems) {
+      for (const { item } of itemsForProduct) {
         if (!item?.images) {
           continue;
         }
@@ -816,7 +852,7 @@ class RegexService {
         }
       }
 
-      const items = availableItems.map(({ item }) => ({
+      const items = itemsForProduct.map(({ item }) => ({
         itemId: item?.itemId || '',
         nameComplete: item?.nameComplete || ''
       }));
@@ -833,23 +869,36 @@ class RegexService {
         items
       };
 
-      if (matchesColor) {
-        matchingProducts.push(cleanedProduct);
+      if (matchesColor && matchesTerm) {
+        colorAndTermMatches.push(cleanedProduct);
+      } else if (matchesColor) {
+        colorOnlyMatches.push(cleanedProduct);
+      } else if (matchesTerm) {
+        termOnlyMatches.push(cleanedProduct);
       } else {
-        alternativeProducts.push(cleanedProduct);
+        fallbackProducts.push(cleanedProduct);
       }
     }
 
-    const orderedProducts = [...matchingProducts, ...alternativeProducts];
+    const orderedProducts = [
+      ...colorAndTermMatches,
+      ...colorOnlyMatches,
+      ...termOnlyMatches,
+      ...fallbackProducts
+    ];
     const result: CleanedProductsResult = {
       products: orderedProducts
     };
 
-    if (filterInfo && !matchingProducts.length && alternativeProducts.length > 0) {
+    const totalColorMatches = colorAndTermMatches.length + colorOnlyMatches.length;
+
+    if (filterInfo && totalColorMatches === 0 && orderedProducts.length > 0) {
       const colorLabel = this.buildColorLabel(colorFilter, filterInfo);
       const labelText = colorLabel ? colorLabel.toLowerCase() : 'solicitado';
       result.message = `no hay disponibilidad en el color ${labelText} pero tengo otras opciones`;
     }
+
+    this.logger.log(`🧹 Resultado limpiarProductos: ${JSON.stringify(result)}`);
 
     return result;
   }
@@ -864,8 +913,8 @@ class RegexService {
       return null;
     }
 
-  const withoutPrefix = trimmed.replace(/^color[_\s-]*/i, '');
-  const labelCandidate = withoutPrefix.replace(/_/g, ' ').trim();
+    const withoutPrefix = trimmed.replace(/^color[_\s-]*/i, '');
+    const labelCandidate = withoutPrefix.replace(/_/g, ' ').trim();
     const families = new Set<string>();
 
     const hexMatch = withoutPrefix.match(/#([0-9a-f]{6})/i);
@@ -897,7 +946,7 @@ class RegexService {
       labelParts.push(labelCandidate);
     }
     if (hex) {
-      const lowerLabel = labelCandidate.toLowerCase();
+      const lowerLabel = (labelCandidate || '').toLowerCase();
       if (!lowerLabel.includes(hex.toLowerCase())) {
         labelParts.push(hex);
       }
@@ -975,6 +1024,89 @@ class RegexService {
     }
 
     return trimmed;
+  }
+
+  private normalizeSearchText(value?: string): string {
+    if (!value || typeof value !== 'string') {
+      return '';
+    }
+
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private getGenderFromIds(ids: string): 'H' | 'M' | null {
+    if (!ids) {
+      return null;
+    }
+
+    const segments = ids.split('/').filter(Boolean);
+    if (!segments.length) {
+      return null;
+    }
+
+    const genderCategory = segments[0];
+    switch (genderCategory) {
+      case '1':
+        return 'H';
+      case '10':
+        return 'M';
+      default:
+        return null;
+    }
+  }
+
+  private itemMatchesGender(
+    referenceIds: Array<{ Key?: string; Value?: string }> | undefined,
+    expectedGender: 'H' | 'M'
+  ): boolean {
+    if (!referenceIds || referenceIds.length === 0) {
+      return true;
+    }
+
+    for (const ref of referenceIds) {
+      const value = ref?.Value?.trim();
+      if (!value) {
+        continue;
+      }
+
+      const gender = this.extractGenderFromReference(value);
+      if (!gender) {
+        continue;
+      }
+
+      return gender === expectedGender;
+    }
+
+    return true;
+  }
+
+  private extractGenderFromReference(value: string): 'H' | 'M' | null {
+    if (!value) {
+      return null;
+    }
+
+    const firstSegment = value.split('-')[0];
+    if (!firstSegment) {
+      return null;
+    }
+
+    const match = firstSegment.match(/([A-Za-z])(?=\d+$)/);
+    if (!match) {
+      return null;
+    }
+
+    const letter = match[1].toUpperCase();
+    if (letter === 'H' || letter === 'M') {
+      return letter;
+    }
+
+    return null;
   }
 
   private productMatchesColor(

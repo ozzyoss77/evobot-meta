@@ -197,7 +197,7 @@ export class VtexService {
     termino: string, 
     ids: string, 
     desde: number = 0, 
-    hasta: number = 14,
+    hasta: number = 49,
     // color?: string
   ): Promise<any[]> {
     try {
