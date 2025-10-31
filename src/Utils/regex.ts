@@ -752,7 +752,7 @@ class RegexService {
     productos: Product[],
     colorFilter?: string,
     fullTerm?: string,
-    expectedGender?: 'H' | 'M' | null
+    expectedGender?: 'H' | 'F' | null
   ): CleanedProductsResult {
     if (!Array.isArray(productos)) {
       return { products: [] };
@@ -1040,7 +1040,7 @@ class RegexService {
       .trim();
   }
 
-  private getGenderFromIds(ids: string): 'H' | 'M' | null {
+  private getGenderFromIds(ids: string): 'H' | 'F' | null {
     if (!ids) {
       return null;
     }
@@ -1055,7 +1055,7 @@ class RegexService {
       case '1':
         return 'H';
       case '10':
-        return 'M';
+        return 'F';
       default:
         return null;
     }
@@ -1063,7 +1063,7 @@ class RegexService {
 
   private itemMatchesGender(
     referenceIds: Array<{ Key?: string; Value?: string }> | undefined,
-    expectedGender: 'H' | 'M'
+    expectedGender: 'H' | 'F'
   ): boolean {
     if (!referenceIds || referenceIds.length === 0) {
       return true;
@@ -1086,7 +1086,7 @@ class RegexService {
     return true;
   }
 
-  private extractGenderFromReference(value: string): 'H' | 'M' | null {
+  private extractGenderFromReference(value: string): 'H' | 'F' | null {
     if (!value) {
       return null;
     }
@@ -1102,7 +1102,7 @@ class RegexService {
     }
 
     const letter = match[1].toUpperCase();
-    if (letter === 'H' || letter === 'M') {
+    if (letter === 'H' || letter === 'F') {
       return letter;
     }
 

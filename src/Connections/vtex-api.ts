@@ -207,15 +207,10 @@ export class VtexService {
       // Construir parámetros
       const params: any = { 
         ft: terminoCodificado,
+        fq: `C:${ids}`,
         _from: desde,
         _to: hasta,
-        // fq: `C:${ids}`
       };
-      
-      // // Agregar segundo fq de color si existe
-      // if (color) {
-      //   params.fq = [`C:${ids}`, color];
-      // }
       
       const response = await this.client.get(
         `/api/catalog_system/pub/products/search`,
