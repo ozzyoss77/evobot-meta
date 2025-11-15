@@ -13,6 +13,10 @@ import { Colombia } from "src/Connections/vtex-countries";
 import { newAIResponse } from "src/AIApi/api-llm";
 import "dotenv/config";
 
+const APPWRITE_BUCKET_IMAGES_ID = process.env.APPWRITE_BUCKET_IMAGES_ID || "images";
+const APPWRITE_BUCKET_VIDEOS_ID = process.env.APPWRITE_BUCKET_VIDEOS_ID || "videos";
+const APPWRITE_BUCKET_DOCUMENTS_ID = process.env.APPWRITE_BUCKET_DOCUMENTS_ID || "documents";
+
 type Product = {
   productId: string;
   productName: string;
@@ -176,15 +180,15 @@ class MediaService {
   constructor(provider: any) {
     this.mediaHandlers = {
       images: {
-        bucketName: 'aiclon-images',
+        bucketName: APPWRITE_BUCKET_IMAGES_ID,
         sendFunction: provider.sendMediaUrl
       },
       videos: {
-        bucketName: 'aiclon-videos',
+        bucketName: APPWRITE_BUCKET_VIDEOS_ID,
         sendFunction: provider.sendMediaUrl
       },
       documents: {
-        bucketName: 'aiclon-documents',
+        bucketName: APPWRITE_BUCKET_DOCUMENTS_ID,
         sendFunction: provider.sendMediaUrl
       }
     };

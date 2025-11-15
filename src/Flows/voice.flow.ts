@@ -14,7 +14,7 @@ import "dotenv/config";
 const logger = new Logger();
 const selecter = process.env.BOT_VOICE_RESPONSE_ACTIVATE;
 const botPhoneNumber = process.env.BOT_PHONENUMBER || "";
-const bucketId = "aiclon-audios"
+const bucketId = process.env.APPWRITE_BUCKET_AUDIOS_ID || "audios";
 
 /**
  * *Function to get the transcription from the voice
