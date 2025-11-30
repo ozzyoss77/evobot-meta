@@ -87,7 +87,7 @@ class ChatwootService {
         "POST",
         {
           name: name,
-          phone: phoneNumber,
+          phone_number: phoneNumber,
           identifier: phoneNumber,
           inbox_id: this.inboxID,
           source_id: phoneNumber,
